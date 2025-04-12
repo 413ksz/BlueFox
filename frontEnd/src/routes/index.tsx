@@ -1,19 +1,19 @@
-import { Title } from "@solidjs/meta";
-import Counter from "~/components/Counter";
+import Developer from "~/components/Developer";
+import Features from "~/components/Features";
+import Footer from "~/components/Footer";
+import Hero from "~/components/Hero";
+import Navbar from "~/components/Navbar";
+import Technologies from "~/components/Technologies";
 
 export default function Home() {
   return (
-    <main>
-      <Title>Hello World</Title>
-      <h1>Hello world!</h1>
-      <Counter />
-      <p>
-        Visit{" "}
-        <a href="https://start.solidjs.com" target="_blank">
-          start.solidjs.com
-        </a>{" "}
-        to learn how to build SolidStart apps.
-      </p>
-    </main>
+    <div class="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-blue-950 text-white flex flex-col">
+      <Navbar/>
+      <Hero/>
+      <Features/>
+      <Technologies/>
+      <Developer/>
+      <Footer/>
+    </div>
   );
 }
