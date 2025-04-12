@@ -44,7 +44,8 @@ This chat app is will powered by some really neat tools:
 * **Backend:** [Go](https://go.dev/) - A powerful and efficient programming language perfect for handling all the behind-the-scenes stuff, like managing messages and users. It's like the strong foundation of your app!
 * **Database:** [Drizzle ORM](https://orm.drizzle.team/) - A modern and type-safe way to interact with your database. It helps your Go backend talk to and store information smoothly. Think of it as the librarian that organizes all your chat data!
 
-## 🚀 Getting Started (For Developers!)
+## 
+🚀 Getting Started (For Developers!)
 
 Want to see this in action or even help build it? Here's how you can get started on your own computer:
 
