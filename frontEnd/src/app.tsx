@@ -9,14 +9,12 @@ export default function App() {
     <Router
       root={props => (
         <MetaProvider>
-          <Title>SolidStart - Basic</Title>
-          <a href="/">Index</a>
-          <a href="/about">About</a>
-          <Suspense>{props.children}</Suspense>
+          <Title>{"Blue Fox | " + props.location.pathname.replace(/^\//, '').replace(/\//g, ' / ')}</Title>
+          <Suspense fallback={<div>Loading...</div>}>{props.children}</Suspense>
         </MetaProvider>
       )}
     >
-      <FileRoutes />
+    <FileRoutes />
     </Router>
   );
 }
