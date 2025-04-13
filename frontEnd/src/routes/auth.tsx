@@ -11,6 +11,7 @@ import AuthHeader from "~/components/AuthHeader";
 import AuthHomeButton from "~/components/AuthHomeButton";
 import Input from "~/components/Input";
 import AuthFooter from "~/components/AuthFooter";
+
 const login = () => {
   const [email, setEmail] = createSignal("");
   const [password, setPassword] = createSignal("");
@@ -21,6 +22,7 @@ const login = () => {
   const [loading, setLoading] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
   const [mounted, setMounted] = createSignal(false);
+  const [isPasswordReset, setIsPasswordReset] = createSignal(false);
 
   onMount(() => {
     setMounted(true);
@@ -31,6 +33,14 @@ const login = () => {
     setLoading(true);
     setError(null);
 
+    if (isPasswordReset()) {
+      console.log("Resetting password with:", {
+        email: email(),
+      });
+      alert("Successfully reset password! (Simulated)");
+      setLoading(false);
+      return;
+    }
     if (
       !email() ||
       !password() ||
@@ -80,7 +90,7 @@ const login = () => {
         animate={{ opacity: mounted() ? 1 : 0 }}
         transition={{ delay: 0.3 }}
       >
-        <AuthHeader isSignUp={isSignUp} />
+        <AuthHeader isSignUp={isSignUp} isPasswordReset={isPasswordReset} />
         <form onsubmit={(e) => handleAuth(e)} class="space-y-4">
           {isSignUp() ? (
             <>
@@ -141,23 +151,28 @@ const login = () => {
                 setValue={setEmail}
                 type={"email"}
               />
-              <Input
-                mounted={mounted}
-                context={"Password"}
-                IconName={IconLock}
-                placeHolder={"Pass123@"}
-                value={password}
-                setValue={setPassword}
-                type={"password"}
-              />
+              {!isPasswordReset() && (
+                <Input
+                  mounted={mounted}
+                  context={"Password"}
+                  IconName={IconLock}
+                  placeHolder={"Pass123@"}
+                  value={password}
+                  setValue={setPassword}
+                  type={"password"}
+                />
+              )}
               <div class="text-right">
                 <button
                   onClick={() => {
-                    alert("Forgot Password (Simulated)");
+                    isPasswordReset()
+                      ? setIsPasswordReset(false)
+                      : setIsPasswordReset(true);
                   }}
                   class="text-blue-400 hover:underline text-sm transition-colors"
+                  type="button"
                 >
-                  Forgot Password?
+                  {isPasswordReset() ? "Back to Login" : "Forgot Password?"}
                 </button>
               </div>
             </>
@@ -170,11 +185,19 @@ const login = () => {
                                      font-semibold text-lg w-full hover:scale-105"
             disabled={loading()}
           >
-            {isSignUp() ? "Sign Up" : "Login"}
+            {isSignUp()
+              ? "Sign Up"
+              : isPasswordReset()
+              ? "Send Reset Link"
+              : "Login"}
           </button>
         </form>
 
-        <AuthFooter isSignUp={isSignUp} setIsSignUp={setIsSignUp} />
+        <AuthFooter
+          isSignUp={isSignUp}
+          setIsSignUp={setIsSignUp}
+          setIsPasswordReset={setIsPasswordReset}
+        />
       </Motion.div>
     </div>
   );
