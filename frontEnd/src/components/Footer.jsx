@@ -1,11 +1,11 @@
 import { IconBrandGithub } from "@tabler/icons-solidjs";
 import { createSignal, onMount } from "solid-js";
 const Footer = () => {
-    const [mounted, setMounted] = createSignal(false);
-    
-    onMount(() => {
-      setMounted(true);
-    });
+  const [mounted, setMounted] = createSignal(false);
+
+  onMount(() => {
+    setMounted(true);
+  });
   return (
     <footer
       id="footer"
@@ -21,9 +21,7 @@ const Footer = () => {
             className="hover:text-blue-400 transition-colors"
             aria-label="GitHub Repository"
           >
-            {
-              mounted() ? <IconBrandGithub className="w-6 h-6" /> : {}
-            }
+            {mounted() && <IconBrandGithub className="w-6 h-6" />}
           </a>
         </div>
       </div>
