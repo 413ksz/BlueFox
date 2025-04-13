@@ -2,7 +2,6 @@ const Navbar = () => {
   const scrollToSection = (sectionId) => {
     if (typeof window === "undefined") return;
     const element = document.getElementById(sectionId);
-    console.log("Scrolling to section:", sectionId);
     if (element) {
       element.scrollIntoView({ behavior: "smooth" });
     }
@@ -16,9 +15,18 @@ const Navbar = () => {
             alt="Blue Fox Logo"
             className="w-14 h-14 mr-2"
           />
-          <span className="text-xl font-bold">Blue <span className="text-blue-400">Fox</span></span>
+          <span className="text-xl font-bold">
+            Blue <span className="text-blue-400">Fox</span>
+          </span>
         </div>
         <nav className="flex gap-6">
+          <button
+            onClick={() => scrollToSection("main")}
+            className="text-gray-300 hover:text-white transition-colors"
+            aria-label="Go to Main section"
+          >
+            Main
+          </button>
           <button
             onClick={() => scrollToSection("features")}
             className="text-gray-300 hover:text-white transition-colors"
@@ -27,11 +35,11 @@ const Navbar = () => {
             Features
           </button>
           <button
-            onClick={() => scrollToSection("main")}
+            onClick={() => scrollToSection("technologies")}
             className="text-gray-300 hover:text-white transition-colors"
-            aria-label="Go to Main section"
+            aria-label="Go to Features section"
           >
-            Main
+            Technologies
           </button>
           <button
             onClick={() => scrollToSection("developer")}
@@ -52,7 +60,7 @@ const Navbar = () => {
             className="bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700
                           px-4 py-2 rounded-full shadow-md hover:shadow-lg transition-all duration-300
                           font-semibold text-sm"
-            onClick={() => {}}
+            onClick={() => (window.location.href = "/auth")}
           >
             Start Chatting
           </button>

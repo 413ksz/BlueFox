@@ -7,14 +7,17 @@ import "./app.css";
 export default function App() {
   return (
     <Router
-      root={props => (
+      root={(props) => (
         <MetaProvider>
-          <Title>{"Blue Fox | " + props.location.pathname.replace(/^\//, '').replace(/\//g, ' / ')}</Title>
+          <Title>
+            {"Blue Fox | " +
+              props.location.pathname.replace(/^\//, "").replace(/\//g, " / ")}
+          </Title>
           <Suspense fallback={<div>Loading...</div>}>{props.children}</Suspense>
         </MetaProvider>
       )}
     >
-    <FileRoutes />
+      <FileRoutes />
     </Router>
   );
 }
