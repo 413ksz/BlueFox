@@ -102,6 +102,7 @@ const login = () => {
                 value={name}
                 setValue={setName}
                 type={"text"}
+                autocomplete={"name"}
               />
               <Input
                 mounted={mounted}
@@ -111,6 +112,7 @@ const login = () => {
                 value={email}
                 setValue={setEmail}
                 type={"email"}
+                autocomplete={"email"}
               />
               <Input
                 mounted={mounted}
@@ -120,6 +122,7 @@ const login = () => {
                 value={birthDate}
                 setValue={setbirthDate}
                 type={"date"}
+                autocomplete={"bday"}
               />
               <Input
                 mounted={mounted}
@@ -129,6 +132,7 @@ const login = () => {
                 value={password}
                 setValue={setPassword}
                 type={"password"}
+                autocomplete={"new-password"}
               />
               <Input
                 mounted={mounted}
@@ -138,6 +142,7 @@ const login = () => {
                 value={confirmPassword}
                 setValue={setConfirmPassword}
                 type={"password"}
+                autocomplete={"new-password"}
               />
             </>
           ) : (
@@ -150,6 +155,7 @@ const login = () => {
                 value={email}
                 setValue={setEmail}
                 type={"email"}
+                autocomplete={"email"}
               />
               {!isPasswordReset() && (
                 <Input
@@ -160,6 +166,7 @@ const login = () => {
                   value={password}
                   setValue={setPassword}
                   type={"password"}
+                  autocomplete={"current-password"}
                 />
               )}
               <div class="text-right">
