@@ -8,6 +8,7 @@ const Input = ({
   value,
   setValue,
   type,
+  autocomplete,
 }) => {
   return (
     <Motion.div
@@ -26,7 +27,7 @@ const Input = ({
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeHolder}
         class="bg-gray-800 text-white border-gray-700 placeholder:text-gray-400 rounded-md px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-        autocomplete="name"
+        autocomplete={autocomplete}
       />
     </Motion.div>
   );
