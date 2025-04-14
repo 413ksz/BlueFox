@@ -1,4 +1,6 @@
+import { useNavigate } from "@solidjs/router";
 const Navbar = () => {
+  const navigate = useNavigate();
   const scrollToSection = (sectionId) => {
     if (typeof window === "undefined") return;
     const element = document.getElementById(sectionId);
@@ -60,7 +62,7 @@ const Navbar = () => {
             className="bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700
                           px-4 py-2 rounded-full shadow-md hover:shadow-lg transition-all duration-300
                           font-semibold text-sm"
-            onClick={() => (window.location.href = "/auth")}
+            onClick={() => navigate("/auth")}
           >
             Start Chatting
           </button>
