@@ -1,9 +1,9 @@
-import Developer from "~/components/Developer";
-import Features from "~/components/Features";
-import Footer from "~/components/Footer";
-import Hero from "~/components/Hero";
-import Navbar from "~/components/Navbar";
-import Technologies from "~/components/Technologies";
+import Developer from "~/components/homePage/Developer";
+import Features from "~/components/homePage/Features";
+import Footer from "~/components/homePage/Footer";
+import Hero from "~/components/homePage/Hero";
+import Navbar from "~/components/homePage/Navbar";
+import Technologies from "~/components/homePage/Technologies";
 
 export default function Home() {
   return (

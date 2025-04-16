@@ -7,10 +7,10 @@ import {
   IconLock,
 } from "@tabler/icons-solidjs";
 import { onMount } from "solid-js";
-import AuthHeader from "~/components/AuthHeader";
-import AuthHomeButton from "~/components/AuthHomeButton";
+import AuthHeader from "~/components/authPage/AuthHeader";
+import AuthHomeButton from "~/components/authPage/AuthHomeButton";
 import Input from "~/components/Input";
-import AuthFooter from "~/components/AuthFooter";
+import AuthFooter from "~/components/authPage/AuthFooter";
 
 const login = () => {
   const [email, setEmail] = createSignal("");

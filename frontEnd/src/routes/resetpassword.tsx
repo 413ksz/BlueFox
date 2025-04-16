@@ -1,7 +1,7 @@
 import { Motion } from "solid-motionone";
 import { createSignal, onMount } from "solid-js";
 import { IconLock } from "@tabler/icons-solidjs";
-import AuthHomeButton from "~/components/AuthHomeButton";
+import AuthHomeButton from "~/components/authPage/AuthHomeButton";
 import Input from "~/components/Input";
 import { useNavigate } from "@solidjs/router";
 
