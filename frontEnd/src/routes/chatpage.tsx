@@ -1,12 +1,6 @@
+import { TbChevronDown, TbChevronUp, TbServer, TbUser } from "solid-icons/tb";
 import { createSignal, createEffect, onMount, For, Show } from "solid-js";
 import { Motion, Presence } from "solid-motionone";
-import {
-  TbUser,
-  TbServer,
-  TbChevronDown,
-  TbChevronUp,
-  TbHash,
-} from "solid-icons/tb";
 import SideBarToggle from "~/components/chatPage/SideBarButton";
 import SideBarItem from "~/components/chatPage/SideBarItem";
 import SideBarItemList from "~/components/chatPage/SideBarItemList";
@@ -244,9 +238,9 @@ const ChatPage = () => {
           <div class="py-2">
             <SideBarToggle
               title="Friends"
-              IconName={IconUser}
-              IconChevronUp={IconChevronUp}
-              IconChevronDown={IconChevronDown}
+              IconName={TbUser}
+              IconChevronUp={TbChevronUp}
+              IconChevronDown={TbChevronDown}
               iconsLoaded={iconsLoaded}
               isOpen={showFriends}
               setIsOpen={setShowFriends}
@@ -289,9 +283,9 @@ const ChatPage = () => {
           <div class="py-2">
             <SideBarToggle
               title="Servers"
-              IconName={IconServer}
-              IconChevronUp={IconChevronUp}
-              IconChevronDown={IconChevronDown}
+              IconName={TbServer}
+              IconChevronUp={TbChevronUp}
+              IconChevronDown={TbChevronDown}
               iconsLoaded={iconsLoaded}
               isOpen={showServers}
               setIsOpen={setShowServers}

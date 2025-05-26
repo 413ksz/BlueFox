@@ -1,5 +1,4 @@
-// In SideBarButton.jsx
-import { Show } from "solid-js"; // Ensure Show is imported
+import { Show } from "solid-js";
 
 const SideBarToggle = ({
   title,
@@ -17,10 +16,7 @@ const SideBarToggle = ({
       aria-expanded={isOpen()}
     >
       <h3 class="font-bold flex items-center gap-3 text-lg">
-        {" "}
-        {/* Bolder text, larger gap */}
         <Show when={iconsLoaded()}>
-          {/* Icon color changes on hover */}
           {
             <IconName class="w-6 h-6 text-blue-400 group-hover:text-blue-300 transition-colors duration-200" />
           }
