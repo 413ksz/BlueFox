@@ -1,16 +1,11 @@
 import { Motion } from "solid-motionone";
 import { createSignal } from "solid-js";
-import {
-  IconUser,
-  IconMail,
-  IconCalendarClock,
-  IconLock,
-} from "@tabler/icons-solidjs";
 import { onMount } from "solid-js";
 import AuthHeader from "~/components/authPage/AuthHeader";
 import AuthHomeButton from "~/components/authPage/AuthHomeButton";
 import Input from "~/components/Input";
 import AuthFooter from "~/components/authPage/AuthFooter";
+import { TbCalendarCode, TbLock, TbMail, TbUser } from "solid-icons/tb";
 
 const login = () => {
   const [email, setEmail] = createSignal("");
@@ -98,7 +93,7 @@ const login = () => {
                 mounted={mounted}
                 context={"Name"}
                 placeHolder={"John Doe"}
-                IconName={IconUser}
+                IconName={TbUser}
                 value={name}
                 setValue={setName}
                 type={"text"}
@@ -108,7 +103,7 @@ const login = () => {
                 mounted={mounted}
                 context={"Email"}
                 placeHolder={"johndoe@example.com"}
-                IconName={IconMail}
+                IconName={TbMail}
                 value={email}
                 setValue={setEmail}
                 type={"email"}
@@ -117,7 +112,7 @@ const login = () => {
               <Input
                 mounted={mounted}
                 context={"Date of Birth"}
-                IconName={IconCalendarClock}
+                IconName={TbCalendarCode}
                 placeHolder={""}
                 value={birthDate}
                 setValue={setbirthDate}
@@ -127,7 +122,7 @@ const login = () => {
               <Input
                 mounted={mounted}
                 context={"Password"}
-                IconName={IconLock}
+                IconName={TbLock}
                 placeHolder={"Pass123@"}
                 value={password}
                 setValue={setPassword}
@@ -137,7 +132,7 @@ const login = () => {
               <Input
                 mounted={mounted}
                 context={"Confirm Password"}
-                IconName={IconLock}
+                IconName={TbLock}
                 placeHolder={"Pass123@"}
                 value={confirmPassword}
                 setValue={setConfirmPassword}
@@ -151,7 +146,7 @@ const login = () => {
                 mounted={mounted}
                 context={"Email"}
                 placeHolder={"johndoe@example.com"}
-                IconName={IconMail}
+                IconName={TbMail}
                 value={email}
                 setValue={setEmail}
                 type={"email"}
@@ -161,7 +156,7 @@ const login = () => {
                 <Input
                   mounted={mounted}
                   context={"Password"}
-                  IconName={IconLock}
+                  IconName={TbLock}
                   placeHolder={"Pass123@"}
                   value={password}
                   setValue={setPassword}

@@ -1,4 +1,4 @@
-import { IconBrandGithub } from "@tabler/icons-solidjs";
+import { TbBrandGithub } from "solid-icons/tb";
 import { createSignal, onMount } from "solid-js";
 const Developer = () => {
   const [mounted, setMounted] = createSignal(false);
@@ -37,7 +37,7 @@ const Developer = () => {
                 className="hover:text-blue-400 transition-colors flex items-center gap-1"
                 aria-label="GitHub Profile"
               >
-                {mounted() && <IconBrandGithub className="w-6 h-6" />}
+                {mounted() && <TbBrandGithub className="w-6 h-6" />}
                 <span className="font-medium">GitHub</span>
               </a>
             </div>
