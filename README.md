@@ -1,3 +1,4 @@
+<img src="https://deploy-badge.vercel.app/vercel/blue-fox?style=for-the-badge" alt="Vercel Deploy"></img>
 ## 💡 Features (What Can It Do?)
 
 This awesome chat app will (eventually!) let you:
@@ -42,7 +43,7 @@ This chat app is will powered by some really neat tools:
 * **Frontend:** [Solid.js](https://www.solidjs.com/) - A super fast and reactive JavaScript library for building user interfaces. Think of it like a really efficient engine for making your website interactive!
 * **Styling:** [Tailwind CSS](https://tailwindcss.com/) - A utility-first CSS framework that lets you style your app quickly by using pre-made classes. It's like having a big box of ready-to-use design Lego bricks!
 * **Backend:** [Go](https://go.dev/) - A powerful and efficient programming language perfect for handling all the behind-the-scenes stuff, like managing messages and users. It's like the strong foundation of your app!
-* **Database:** [Drizzle ORM](https://orm.drizzle.team/) - A modern and type-safe way to interact with your database. It helps your Go backend talk to and store information smoothly. Think of it as the librarian that organizes all your chat data!
+* **Database:** [GORM](https://gorm.io/index.html) - A fantastic ORM library for Go, making it easy to interact with your database. It helps your Go backend talk to and store information smoothly. Think of it as the librarian that organizes all your chat data!
 
 ## 
 🚀 Getting Started (For Developers!)

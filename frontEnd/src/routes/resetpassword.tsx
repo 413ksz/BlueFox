@@ -1,9 +1,9 @@
 import { Motion } from "solid-motionone";
 import { createSignal, onMount } from "solid-js";
-import { IconLock } from "@tabler/icons-solidjs";
 import AuthHomeButton from "~/components/authPage/AuthHomeButton";
 import Input from "~/components/Input";
 import { useNavigate } from "@solidjs/router";
+import { TbLock } from "solid-icons/tb";
 
 const ResetPassword = () => {
   const [password, setPassword] = createSignal("");
@@ -62,7 +62,7 @@ const ResetPassword = () => {
             mounted={mounted}
             context={"New Password"}
             placeHolder={"NewPass123@"}
-            IconName={IconLock}
+            IconName={TbLock}
             value={password}
             setValue={setPassword}
             type={"password"}
@@ -72,7 +72,7 @@ const ResetPassword = () => {
             mounted={mounted}
             context={"Confirm New Password"}
             placeHolder={"NewPass123@"}
-            IconName={IconLock}
+            IconName={TbLock}
             value={confirmPassword}
             setValue={setConfirmPassword}
             type={"password"}

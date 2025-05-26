@@ -1,13 +1,13 @@
 import { Motion } from "solid-motionone";
-import {
-  IconBolt,
-  IconSend,
-  IconBrandGithub,
-  IconUsers,
-  IconRocket,
-  IconBook,
-} from "@tabler/icons-solidjs";
 import { createSignal, onMount } from "solid-js";
+import {
+  TbBolt,
+  TbBook,
+  TbBrandGithub,
+  TbRocket,
+  TbSend,
+  TbUser,
+} from "solid-icons/tb";
 
 const Features = () => {
   const [mounted, setMounted] = createSignal(false);
@@ -19,35 +19,35 @@ const Features = () => {
     {
       title: "Blazing Fast",
       description: "Experience lightning-fast performance with SolidJS.",
-      icon: IconBolt,
+      icon: TbBolt,
     },
     {
       title: "Real-time Chat",
       description:
         "Connect instantly with our efficient, low-latency chat engine.",
-      icon: IconSend,
+      icon: TbSend,
     },
     {
       title: "Open Source",
       description: "Explore and contribute to this project on GitHub.",
-      icon: IconBrandGithub,
+      icon: TbBrandGithub,
     },
     {
       title: "Community Driven",
       description: "Join a vibrant community of developers users.",
-      icon: IconUsers,
+      icon: TbUser,
     },
     {
       title: "Lightweight",
       description:
         "Minimal footprint for maximum performance and faster load times.",
-      icon: IconRocket,
+      icon: TbRocket,
     },
     {
       title: "Documentation",
       description:
         "Comprehensive documentation to help you get started quickly.",
-      icon: IconBook,
+      icon: TbBook,
     },
   ];
   return (
