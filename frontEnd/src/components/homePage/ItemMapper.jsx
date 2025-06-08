@@ -1,4 +1,4 @@
-import { For } from "solid-js"; // Import the For component
+import { For } from "solid-js";
 
 const ItemMapper = ({ items }) => {
   return (
