@@ -10,13 +10,24 @@ const Navbar = () => {
     if (typeof window === "undefined") return;
     const element = document.getElementById(sectionId);
     if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
+      const headerElement = document.getElementById("header");
+      const headerHeight = headerElement ? headerElement.offsetHeight : 0;
+      const targetScrollPosition =
+        element.getBoundingClientRect().top + window.scrollY - headerHeight;
+
+      window.scrollTo({
+        top: targetScrollPosition,
+        behavior: "smooth",
+      });
       setIsMenuOpen(false);
     }
   };
 
   return (
-    <header className="sticky top-0 z-10 bg-gray-900/90 backdrop-blur-md py-4 px-6 border-b border-gray-800">
+    <header
+      id="header"
+      className="sticky top-0 z-10 bg-gray-900/90 backdrop-blur-md py-4 px-6 border-b border-gray-800"
+    >
       <div className="container mx-auto flex justify-between items-center">
         <div className="flex items-center">
           <img
