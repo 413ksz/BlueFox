@@ -16,7 +16,6 @@ const Navbar = () => {
   ];
 
   const scrollToSection = (sectionId) => {
-    alert("scrolling to " + sectionId);
     if (typeof window === "undefined") return;
     const element = document.getElementById(sectionId);
     if (element) {
