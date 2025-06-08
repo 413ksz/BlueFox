@@ -37,7 +37,7 @@ const Navbar = () => {
             Features
           </button>
           <button
-            onClick={() => scrollToSection("technologies")}
+            onClick={() => scrollToSection("technologies-packages-hosting")}
             className="text-gray-300 hover:text-white transition-colors"
             aria-label="Go to Features section"
           >
