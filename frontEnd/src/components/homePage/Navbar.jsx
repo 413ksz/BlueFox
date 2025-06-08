@@ -1,12 +1,22 @@
 import { useNavigate } from "@solidjs/router";
 import { createSignal, Switch, Match, Show } from "solid-js";
 import { AiOutlineMenuFold, AiOutlineMenuUnfold } from "solid-icons/ai";
+import NavLink from "./NavLink";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = createSignal(false);
 
+  const navItems = [
+    { id: "main", label: "Main" },
+    { id: "features", label: "Features" },
+    { id: "technologies-packages-hosting", label: "Technologies" },
+    { id: "developer", label: "Developer" },
+    { id: "footer", label: "Footer" },
+  ];
+
   const scrollToSection = (sectionId) => {
+    alert("scrolling to " + sectionId);
     if (typeof window === "undefined") return;
     const element = document.getElementById(sectionId);
     if (element) {
@@ -45,6 +55,8 @@ const Navbar = () => {
           className="md:hidden text-gray-300 hover:text-white transition-colors"
           onClick={() => setIsMenuOpen(!isMenuOpen())}
           aria-label="Toggle navigation menu"
+          aria-expanded={isMenuOpen()}
+          aria-controls="mobile-menu"
         >
           <Switch>
             <Match when={isMenuOpen()}>
@@ -58,41 +70,16 @@ const Navbar = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex gap-6">
-          <button
-            onClick={() => scrollToSection("main")}
-            className="text-gray-300 hover:text-white transition-colors"
-            aria-label="Go to Main section"
-          >
-            Main
-          </button>
-          <button
-            onClick={() => scrollToSection("features")}
-            className="text-gray-300 hover:text-white transition-colors"
-            aria-label="Go to Features section"
-          >
-            Features
-          </button>
-          <button
-            onClick={() => scrollToSection("technologies-packages-hosting")}
-            className="text-gray-300 hover:text-white transition-colors"
-            aria-label="Go to Technologies section"
-          >
-            Technologies
-          </button>
-          <button
-            onClick={() => scrollToSection("developer")}
-            className="text-gray-300 hover:text-white transition-colors"
-            aria-label="Go to Developer section"
-          >
-            Developer
-          </button>
-          <button
-            onClick={() => scrollToSection("footer")}
-            className="text-gray-300 hover:text-white transition-colors"
-            aria-label="Go to Footer section"
-          >
-            Footer
-          </button>
+          <For each={navItems}>
+            {(item) => (
+              <NavLink
+                scrollToSection={scrollToSection}
+                scrollToSectionId={item.id}
+                label={item.label}
+                isMobile={false}
+              />
+            )}
+          </For>
           <button
             size="sm"
             className="bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700
@@ -107,37 +94,17 @@ const Navbar = () => {
 
       {/* Mobile menu items */}
       <Show when={isMenuOpen()}>
-        <nav className="md:hidden mt-4 space-y-2">
-          <button
-            onClick={() => scrollToSection("main")}
-            className="block w-full text-left py-2 px-4 text-gray-300 hover:bg-gray-800 hover:text-white rounded-md transition-colors"
-          >
-            Main
-          </button>
-          <button
-            onClick={() => scrollToSection("features")}
-            className="block w-full text-left py-2 px-4 text-gray-300 hover:bg-gray-800 hover:text-white rounded-md transition-colors"
-          >
-            Features
-          </button>
-          <button
-            onClick={() => scrollToSection("technologies-packages-hosting")}
-            className="block w-full text-left py-2 px-4 text-gray-300 hover:bg-gray-800 hover:text-white rounded-md transition-colors"
-          >
-            Technologies
-          </button>
-          <button
-            onClick={() => scrollToSection("developer")}
-            className="block w-full text-left py-2 px-4 text-gray-300 hover:bg-gray-800 hover:text-white rounded-md transition-colors"
-          >
-            Developer
-          </button>
-          <button
-            onClick={() => scrollToSection("footer")}
-            className="block w-full text-left py-2 px-4 text-gray-300 hover:bg-gray-800 hover:text-white rounded-md transition-colors"
-          >
-            Footer
-          </button>
+        <nav id="mobile-menu" className="md:hidden mt-4 space-y-2">
+          <For each={navItems}>
+            {(item) => (
+              <NavLink
+                scrollToSection={scrollToSection}
+                scrollToSectionId={item.id}
+                label={item.label}
+                isMobile={true}
+              />
+            )}
+          </For>
           <button
             className="block w-full text-left py-2 px-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 rounded-md shadow-md hover:shadow-lg transition-all duration-300 font-semibold text-sm"
             onClick={() => {
