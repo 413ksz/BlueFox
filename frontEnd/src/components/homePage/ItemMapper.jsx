@@ -2,7 +2,7 @@ import { For } from "solid-js"; // Import the For component
 
 const ItemMapper = ({ items }) => {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 justify-items-center">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 justify-items-center mb-16">
       <For each={items}>
         {(item) => (
           <a
