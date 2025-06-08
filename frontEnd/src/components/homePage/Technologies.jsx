@@ -45,7 +45,7 @@ const Technologies = () => {
           The core frameworks and libraries that power the application.
         </p>
 
-        <ItemMapper Array={technologies} />
+        <ItemMapper items={technologies} />
 
         {/* Packages Section */}
         <h2 className="text-3xl sm:text-4xl font-extrabold text-center mb-10 text-white leading-tight">
@@ -55,7 +55,7 @@ const Technologies = () => {
           Essential utilities and specialized libraries enhancing functionality.
         </p>
 
-        <ItemMapper Array={packages} />
+        <ItemMapper items={packages} />
 
         {/* Hosting Platforms Section */}
         <h2 className="text-3xl sm:text-4xl font-extrabold text-center mb-10 text-white leading-tight">
@@ -65,7 +65,7 @@ const Technologies = () => {
           Where the application are deployed and hosted.
         </p>
 
-        <ItemMapper Array={hostingPlatforms} />
+        <ItemMapper items={hostingPlatforms} />
       </div>
     </section>
   );

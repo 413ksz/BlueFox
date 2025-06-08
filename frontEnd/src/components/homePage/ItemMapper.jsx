@@ -1,10 +1,11 @@
-const ItemMapper = ({ Array }) => {
+import { For } from "solid-js"; // Import the For component
+
+const ItemMapper = ({ items }) => {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 justify-items-center mb-16">
-      {Array.map((item, index) => {
-        return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 justify-items-center">
+      <For each={items}>
+        {(item) => (
           <a
-            key={index}
             href={item.url}
             target="_blank"
             rel="noopener noreferrer"
@@ -13,8 +14,8 @@ const ItemMapper = ({ Array }) => {
           >
             {item.name}
           </a>
-        );
-      })}
+        )}
+      </For>
     </div>
   );
 };
