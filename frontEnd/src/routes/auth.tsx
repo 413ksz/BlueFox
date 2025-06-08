@@ -1,5 +1,5 @@
 import { Motion } from "solid-motionone";
-import { createSignal } from "solid-js";
+import { createSignal, Switch, Match } from "solid-js";
 import { onMount } from "solid-js";
 import AuthHeader from "~/components/authPage/AuthHeader";
 import AuthHomeButton from "~/components/authPage/AuthHomeButton";
@@ -13,11 +13,13 @@ const login = () => {
   const [confirmPassword, setConfirmPassword] = createSignal("");
   const [name, setName] = createSignal("");
   const [birthDate, setbirthDate] = createSignal("");
-  const [isSignUp, setIsSignUp] = createSignal(false);
   const [loading, setLoading] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
   const [mounted, setMounted] = createSignal(false);
-  const [isPasswordReset, setIsPasswordReset] = createSignal(false);
+
+  const [view, setView] = createSignal<"login" | "signup" | "resetPassword">(
+    "login"
+  );
 
   onMount(() => {
     setMounted(true);
@@ -28,7 +30,7 @@ const login = () => {
     setLoading(true);
     setError(null);
 
-    if (isPasswordReset()) {
+    if (view() === "resetPassword") {
       console.log("Resetting password with:", {
         email: email(),
       });
@@ -39,14 +41,14 @@ const login = () => {
     if (
       !email() ||
       !password() ||
-      (isSignUp() && (!name() || !birthDate() || !confirmPassword()))
+      (view() === "signup" && (!name() || !birthDate() || !confirmPassword()))
     ) {
       setError("Please fill in all fields.");
       setLoading(false);
       return;
     }
 
-    if (isSignUp() && password() !== confirmPassword()) {
+    if (view() === "signup" && password() !== confirmPassword()) {
       setError("Passwords do not match.");
       setLoading(false);
       return;
@@ -54,9 +56,9 @@ const login = () => {
 
     try {
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      if (isSignUp()) {
+      if (view() === "signup") {
         console.log("Signing up with:", {
-          mame: name(),
+          name: name(),
           email: email(),
           birthDate: birthDate(),
           password: password(),
@@ -85,74 +87,87 @@ const login = () => {
         animate={{ opacity: mounted() ? 1 : 0 }}
         transition={{ delay: 0.3 }}
       >
-        <AuthHeader isSignUp={isSignUp} isPasswordReset={isPasswordReset} />
+        <AuthHeader view={view} setView={setView} />
         <form onsubmit={(e) => handleAuth(e)} class="space-y-4">
-          {isSignUp() ? (
-            <>
-              <Input
-                mounted={mounted}
-                context={"Name"}
-                placeHolder={"John Doe"}
-                IconName={TbUser}
-                value={name}
-                setValue={setName}
-                type={"text"}
-                autocomplete={"name"}
-              />
-              <Input
-                mounted={mounted}
-                context={"Email"}
-                placeHolder={"johndoe@example.com"}
-                IconName={TbMail}
-                value={email}
-                setValue={setEmail}
-                type={"email"}
-                autocomplete={"email"}
-              />
-              <Input
-                mounted={mounted}
-                context={"Date of Birth"}
-                IconName={TbCalendarCode}
-                placeHolder={""}
-                value={birthDate}
-                setValue={setbirthDate}
-                type={"date"}
-                autocomplete={"bday"}
-              />
-              <Input
-                mounted={mounted}
-                context={"Password"}
-                IconName={TbLock}
-                placeHolder={"Pass123@"}
-                value={password}
-                setValue={setPassword}
-                type={"password"}
-                autocomplete={"new-password"}
-              />
-              <Input
-                mounted={mounted}
-                context={"Confirm Password"}
-                IconName={TbLock}
-                placeHolder={"Pass123@"}
-                value={confirmPassword}
-                setValue={setConfirmPassword}
-                type={"password"}
-                autocomplete={"new-password"}
-              />
-            </>
-          ) : (
-            <>
-              <Input
-                mounted={mounted}
-                context={"Email"}
-                placeHolder={"johndoe@example.com"}
-                IconName={TbMail}
-                value={email}
-                setValue={setEmail}
-                type={"email"}
-                autocomplete={"email"}
-              />
-              {!isPasswordReset() && (
+          {
+            <Switch>
+              <Match when={view() === "signup"}>
+                <>
+                  <Input
+                    mounted={mounted}
+                    context={"Name"}
+                    placeHolder={"John Doe"}
+                    IconName={TbUser}
+                    value={name}
+                    setValue={setName}
+                    type={"text"}
+                    autocomplete={"name"}
+                  />
+                  <Input
+                    mounted={mounted}
+                    context={"Email"}
+                    placeHolder={"johndoe@example.com"}
+                    IconName={TbMail}
+                    value={email}
+                    setValue={setEmail}
+                    type={"email"}
+                    autocomplete={"email"}
+                  />
+                  <Input
+                    mounted={mounted}
+                    context={"Date of Birth"}
+                    IconName={TbCalendarCode}
+                    placeHolder={""}
+                    value={birthDate}
+                    setValue={setbirthDate}
+                    type={"date"}
+                    autocomplete={"bday"}
+                  />
+                  <Input
+                    mounted={mounted}
+                    context={"Password"}
+                    IconName={TbLock}
+                    placeHolder={"Pass123@"}
+                    value={password}
+                    setValue={setPassword}
+                    type={"password"}
+                    autocomplete={"new-password"}
+                  />
+                  <Input
+                    mounted={mounted}
+                    context={"Confirm Password"}
+                    IconName={TbLock}
+                    placeHolder={"Pass123@"}
+                    value={confirmPassword}
+                    setValue={setConfirmPassword}
+                    type={"password"}
+                    autocomplete={"new-password"}
+                  />
+                </>
+              </Match>
+              <Match when={view() === "resetPassword"}>
+                <Input
+                  mounted={mounted}
+                  context={"Email"}
+                  placeHolder={"johndoe@example.com"}
+                  IconName={TbMail}
+                  value={email}
+                  setValue={setEmail}
+                  type={"email"}
+                  autocomplete={"email"}
+                />
+              </Match>
+              <Match when={view() === "login"}>
+                <Input
+                  mounted={mounted}
+                  context={"Email"}
+                  placeHolder={"johndoe@example.com"}
+                  IconName={TbMail}
+                  value={email}
+                  setValue={setEmail}
+                  type={"email"}
+                  autocomplete={"email"}
+                />
                 <Input
                   mounted={mounted}
                   context={"Password"}
@@ -163,22 +178,25 @@ const login = () => {
                   type={"password"}
                   autocomplete={"current-password"}
                 />
-              )}
-              <div class="text-right">
-                <button
-                  onClick={() => {
-                    isPasswordReset()
-                      ? setIsPasswordReset(false)
-                      : setIsPasswordReset(true);
-                  }}
-                  class="text-blue-400 hover:underline text-sm transition-colors"
-                  type="button"
-                >
-                  {isPasswordReset() ? "Back to Login" : "Forgot Password?"}
-                </button>
-              </div>
-            </>
-          )}
+              </Match>
+            </Switch>
+          }
+
+          <div class="text-right">
+            <button
+              onClick={() => {
+                view() === "resetPassword"
+                  ? setView("login")
+                  : setView("resetPassword");
+              }}
+              class="text-blue-400 hover:underline text-sm transition-colors"
+              type="button"
+            >
+              {view() === "resetPassword"
+                ? "Back to Login"
+                : "Forgot Password?"}
+            </button>
+          </div>
 
           <button
             type="submit"
@@ -187,19 +205,19 @@ const login = () => {
                                      font-semibold text-lg w-full hover:scale-105"
             disabled={loading()}
           >
-            {isSignUp()
-              ? "Sign Up"
-              : isPasswordReset()
-              ? "Send Reset Link"
-              : "Login"}
+            {
+              <Switch>
+                <Match when={view() === "signup"}>{"Sign Up"}</Match>
+                <Match when={view() === "resetPassword"}>
+                  {"Send Reset Link"}
+                </Match>
+                <Match when={view() === "login"}>{"Login"}</Match>
+              </Switch>
+            }
           </button>
         </form>
 
-        <AuthFooter
-          isSignUp={isSignUp}
-          setIsSignUp={setIsSignUp}
-          setIsPasswordReset={setIsPasswordReset}
-        />
+        <AuthFooter view={view} setView={setView} />
       </Motion.div>
     </div>
   );

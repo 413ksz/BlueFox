@@ -1,12 +1,12 @@
-const AuthFooter = ({ isSignUp, setIsSignUp, setIsPasswordReset }) => {
+const AuthFooter = ({ view, setView }) => {
   return (
     <div class="text-center text-gray-400 text-sm">
-      {isSignUp() ? (
+      {view() === "signup" ? (
         <p>
           Already have an account?{" "}
           <button
             onClick={() => {
-              setIsSignUp(false);
+              setView("login");
             }}
             class="text-blue-400 hover:underline font-medium transition-colors"
           >
@@ -18,8 +18,7 @@ const AuthFooter = ({ isSignUp, setIsSignUp, setIsPasswordReset }) => {
           Don't have an account?{" "}
           <button
             onClick={() => {
-              setIsSignUp(true);
-              setIsPasswordReset(false);
+              setView("signup");
             }}
             class="text-blue-400 hover:underline font-medium transition-colors"
           >
