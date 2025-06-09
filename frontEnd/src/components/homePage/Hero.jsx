@@ -37,15 +37,15 @@ function Hero() {
           CSS.
         </Motion.p>
         <Motion.div
-          initial={{ opacity: 0 }}
-          animate={mounted() ? { opacity: 1 } : {}}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={mounted() ? { opacity: 1, scale: 1 } : {}}
           transition={{ duration: 0.6, easing: "ease-in-out", delay: 0.4 }}
         >
           <button
             size="lg"
             className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600
-                     px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300
-                     font-semibold text-lg flex items-center gap-2"
+                      px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300
+                      font-semibold text-lg flex items-center gap-2"
             onClick={() => scrollToSection("features")}
           >
             Get Started
@@ -69,5 +69,4 @@ function Hero() {
     </main>
   );
 }
-
 export default Hero;

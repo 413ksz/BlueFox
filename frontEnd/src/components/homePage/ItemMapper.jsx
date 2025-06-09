@@ -1,11 +1,19 @@
 import { For } from "solid-js";
+import { Motion } from "solid-motionone";
 
 const ItemMapper = ({ items, mounted }) => {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 justify-items-center mb-16">
       <For each={items}>
         {(item) => (
-          <a
+          <Motion.a
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{
+              duration: 0.4,
+              delay: items.indexOf(item) * 0.08,
+              ease: "linear",
+            }}
             href={item.url}
             target="_blank"
             rel="noopener noreferrer"
@@ -18,12 +26,13 @@ const ItemMapper = ({ items, mounted }) => {
               transition-all duration-300 ease-in-out
               transform hover:-translate-y-1 hover:scale-105
               w-full h-32 sm:h-36
+              mx-auto
             "
             aria-label={`Learn more about ${item.name}`}
           >
             {mounted() && <item.icon className="w-8 h-8 mb-3 text-blue-400" />}
-            <span className="text-lg font-semibold">{item.name}</span>
-          </a>
+            <span className="text-lg font-semibold text-wrap">{item.name}</span>
+          </Motion.a>
         )}
       </For>
     </div>
