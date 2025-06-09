@@ -1,35 +1,76 @@
 import ItemMapper from "./ItemMapper";
+import { TbBrandSolidjs } from "solid-icons/tb";
+import { VsServerEnvironment } from "solid-icons/vs";
+import { SiTailwindcss, SiPostcss, SiVercel } from "solid-icons/si";
+import { createSignal, onMount } from "solid-js";
 
 const Technologies = () => {
   const technologies = [
-    { name: "SolidJS", url: "https://www.solidjs.com/" },
-    { name: "SolidStart", url: "https://start.solidjs.com/" },
-    { name: "Tailwind CSS", url: "https://tailwindcss.com/" },
+    {
+      name: "SolidJS",
+      url: "https://www.solidjs.com/",
+      icon: TbBrandSolidjs,
+    },
+    {
+      name: "SolidStart",
+      url: "https://start.solidjs.com/",
+      icon: TbBrandSolidjs,
+    },
+    {
+      name: "Tailwind CSS",
+      url: "https://tailwindcss.com/",
+      icon: SiTailwindcss,
+    },
   ];
   const packages = [
     {
       name: "@solidjs/meta",
       url: "https://github.com/solidjs/solid-meta",
+      icon: TbBrandSolidjs,
     },
     {
       name: "@solidjs/router",
       url: "https://github.com/solidjs/solid-router",
+      icon: TbBrandSolidjs,
     },
-    { name: "@solidjs/start", url: "https://start.solidjs.com/" },
-    { name: "solid-icons", url: "https://solid-icons.vercel.app/" },
+    {
+      name: "@solidjs/start",
+      url: "https://start.solidjs.com/",
+      icon: TbBrandSolidjs,
+    },
+    {
+      name: "solid-icons",
+      url: "https://solid-icons.vercel.app/",
+      icon: TbBrandSolidjs,
+    },
+
     {
       name: "solid-motionone",
       url: "https://github.com/solidjs-community/solid-motionone",
+      icon: TbBrandSolidjs,
     },
-    { name: "vinxi", url: "https://vinxi.vercel.app/" },
+    {
+      name: "vinxi",
+      url: "https://vinxi.vercel.app/",
+      icon: VsServerEnvironment,
+    },
     {
       name: "@tailwindcss/postcss",
       url: "https://github.com/tailwindlabs/tailwindcss",
+      icon: SiTailwindcss,
     },
-    { name: "postcss", url: "https://postcss.org/" },
+    { name: "postcss", url: "https://postcss.org/", icon: SiPostcss },
   ];
 
-  const hostingPlatforms = [{ name: "Vercel", url: "https://vercel.com/" }];
+  const hostingPlatforms = [
+    { name: "Vercel", url: "https://vercel.com/", icon: SiVercel },
+  ];
+
+  const [mounted, setMounted] = createSignal(false);
+
+  onMount(() => {
+    setMounted(true);
+  });
 
   return (
     <section
@@ -45,7 +86,7 @@ const Technologies = () => {
           The core frameworks and libraries that power the application.
         </p>
 
-        <ItemMapper items={technologies} />
+        <ItemMapper items={technologies} mounted={mounted} />
 
         {/* Packages Section */}
         <h2 className="text-3xl sm:text-4xl font-extrabold text-center mb-10 text-white leading-tight">
@@ -55,7 +96,7 @@ const Technologies = () => {
           Essential utilities and specialized libraries enhancing functionality.
         </p>
 
-        <ItemMapper items={packages} />
+        <ItemMapper items={packages} mounted={mounted} />
 
         {/* Hosting Platforms Section */}
         <h2 className="text-3xl sm:text-4xl font-extrabold text-center mb-10 text-white leading-tight">
@@ -65,7 +106,7 @@ const Technologies = () => {
           Where the application are deployed and hosted.
         </p>
 
-        <ItemMapper items={hostingPlatforms} />
+        <ItemMapper items={hostingPlatforms} mounted={mounted} />
       </div>
     </section>
   );
