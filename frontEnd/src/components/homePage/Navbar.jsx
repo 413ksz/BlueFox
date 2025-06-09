@@ -40,7 +40,7 @@ const Navbar = () => {
       <div className="container mx-auto flex justify-between items-center">
         <div className="flex items-center">
           <img
-            src="./BlueFoxLogo.png"
+            src="./BlueFoxLogo.webp"
             alt="Blue Fox Logo"
             className="w-14 h-14 mr-2"
           />
