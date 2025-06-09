@@ -57,9 +57,10 @@ const Developer = () => {
             </Motion.p>
             <Motion.div
               initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              animate={mounted() ? { opacity: 1 } : {}}
               transition={{
                 duration: 0.4,
+                delay: 0.7,
                 ease: "linear",
               }}
               className="flex justify-center md:justify-start gap-4"
