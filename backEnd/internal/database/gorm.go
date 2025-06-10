@@ -15,7 +15,6 @@ func InitDB() (*gorm.DB, error) {
 	// Get database URL from environment variable
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		// Default to SQLite if DATABASE_URL is not set
 		dbURL = ""
 		log.Println("DATABASE_URL environment variable not set.")
 	}
@@ -31,9 +30,6 @@ func InitDB() (*gorm.DB, error) {
 	return db, nil
 }
 
-// AutoMigrate migrates the database schema for the given models.
-// This is convenient for development but for production, consider explicit migrations.
-// myapp/database/database.go
 func Migrate(db *gorm.DB) {
 	log.Println("Starting database auto-migration...")
 	err := db.AutoMigrate(
