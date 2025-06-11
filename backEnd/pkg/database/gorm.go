@@ -13,7 +13,14 @@ import (
 
 var DB *gorm.DB
 
-// InitAppDB initializes the global database connection for your application's API handlers.
+// InitAppDB initializes the global GORM database connection pool for the main application.
+// It retrieves the database connection string from the "DATABASE_URL" environment variable.
+// This function should be called once at application startup (e.g., in an init() function)
+// to ensure a ready and configured database connection is available globally.
+//
+// Returns:
+//
+//	error: An error if the DATABASE_URL is not set or if the connection fails.
 func InitAppDB() error {
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
@@ -39,19 +46,19 @@ func InitAppDB() error {
 	return nil
 }
 
-func CloseAppDB() {
-	if DB != nil {
-		sqlDB, err := DB.DB()
-		if err == nil {
-			if err := sqlDB.Close(); err != nil {
-				log.Printf("Error closing global database connection: %v", err)
-			} else {
-				log.Println("Global database connection closed.")
-			}
-		}
-	}
-}
-
+// ConnectMigrateDB establishes a connection to the PostgreSQL database using the provided
+// database URL and configures a connection pool. It ensures the database is reachable by
+// pinging it and sets up a connection pool with specified parameters.
+//
+// Parameters:
+//
+//	dbURL: A string representing the connection string for the PostgreSQL database.
+//
+// Returns:
+//
+//	*gorm.DB: A pointer to the GORM database connection instance.
+//	error: An error if the connection fails, the underlying SQL DB cannot be retrieved,
+//	       or if the database is unreachable.
 func ConnectMigrateDB(dbURL string) (*gorm.DB, error) {
 	db, err := gorm.Open(postgres.Open(dbURL), &gorm.Config{})
 	if err != nil {
@@ -74,6 +81,20 @@ func ConnectMigrateDB(dbURL string) (*gorm.DB, error) {
 	return db, nil
 }
 
+// Migrate performs the GORM auto-migrations on the provided database instance.
+// This function iterates through all registered GORM models and automatically:
+// - Creates new tables for models that do not yet exist in the database.
+// - Adds missing columns to existing tables.
+// - Adds missing indexes and foreign key constraints.
+//
+// Important Note: GORM's AutoMigrate is non-destructive. It will NOT
+// delete columns, tables, or indexes that are no longer defined in your models.
+// For complex schema changes or deletions, a dedicated versioned migration tool
+// (e.g., golang-migrate/migrate) or manual SQL scripts are typically required.
+//
+// Parameters:
+//
+//	db: The GORM database instance on which to run the migrations.
 func Migrate(db *gorm.DB) {
 	log.Println("Starting database auto-migration...")
 	err := db.AutoMigrate(
