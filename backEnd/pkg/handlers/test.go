@@ -7,7 +7,7 @@ import (
 )
 
 func TestHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("TestHandler received a request.")
+	log.Println("Executing test handler.")
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "Hello from the TestHandler! You hit route: %s\n", r.URL.Path)
+	fmt.Fprint(w, "Hello from the /api/hello endpoint! Routing works!\n")
 }
