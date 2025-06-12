@@ -16,7 +16,7 @@
     "rewrites": [
       {
         "source": "/api/(.*)",
-        "destination": "/backEnd/cmd/api/$1"
+        "destination": "/backEnd/cmd/api/main.go"
       },
       {
         "source": "/(.*)",
