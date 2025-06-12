@@ -1,0 +1,3 @@
+//test api route
+GET http://localhost:9000/api/test
+Accept: application/json
