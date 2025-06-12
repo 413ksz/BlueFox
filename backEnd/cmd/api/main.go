@@ -8,6 +8,7 @@ import (
 	"github.com/413ksz/BlueFox/backEnd/pkg/database"
 	"github.com/413ksz/BlueFox/backEnd/pkg/router"
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
 
 var appRouter *mux.Router
@@ -52,8 +53,20 @@ func main() {
 
 	log.Printf("Starting local HTTP server on %s for testing routes...", addr)
 
+	// Configure CORS options for local development.
+	// You MUST replace "http://localhost:3000" with the actual origin of your frontend development server.
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"}, // Allow all common HTTP methods
+		AllowedHeaders:   []string{"Content-Type", "Authorization", "Accept"},          // Allow common headers
+		AllowCredentials: true,                                                         // Allow cookies, auth tokens, etc.
+		Debug:            true,
+	})
+
+	handlerWithCORS := c.Handler(appRouter)
+
 	// Use http.ListenAndServe to start the server.
 	// The appRouter will handle all incoming requests.
 	// Log a fatal error if the server fails to start.
-	log.Fatal(http.ListenAndServe(addr, appRouter))
+	log.Fatal(http.ListenAndServe(addr, handlerWithCORS))
 }
