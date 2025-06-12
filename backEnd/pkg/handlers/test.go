@@ -9,5 +9,5 @@ import (
 func TestHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Executing test handler.")
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, "Hello from the /api/hello endpoint! Routing works!\n")
+	fmt.Fprint(w, "Hello from the /api/test endpoint! Routing works!\n")
 }
