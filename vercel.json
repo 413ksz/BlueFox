@@ -1,0 +1,26 @@
+{
+    "version": 2,
+    "builds": [
+      {
+        "src": "frontend/package.json",
+        "use": "@vercel/static-build",
+        "config": {
+          "distDir": "dist"
+        }
+      },
+      {
+        "src": "backEnd/cmd/api/main.go",
+        "use": "@vercel/go"
+      }
+    ],
+    "rewrites": [
+      {
+        "source": "/api/(.*)",
+        "destination": "/backEnd/cmd/api/$1"
+      },
+      {
+        "source": "/(.*)",
+        "destination": "/frontend/$1"
+      }
+    ]
+  }
