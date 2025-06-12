@@ -10,7 +10,6 @@ import (
 // main is the entry point for the database migration script.
 // It connects to the PostgreSQL database using the DATABASE_URL environment variable,
 // then executes all pending schema migrations defined within the `pkg/database` package.
-//
 // This script is crucial for setting up and updating the database schema.
 // A fatal error occurs if DATABASE_URL is not provided or if the database connection fails.
 func main() {
