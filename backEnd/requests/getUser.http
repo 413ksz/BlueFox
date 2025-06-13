@@ -1,0 +1,3 @@
+//test route for user get
+GET  http://localhost:9000/api/user/e0c4e131-2a2e-4451-864b-25e2699766e4
+Accept: application/json
