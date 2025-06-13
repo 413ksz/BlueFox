@@ -11,5 +11,11 @@ import (
 func RegisterRoutes(r *mux.Router) {
 	r.HandleFunc("/api/test", handlers.TestHandler).Methods("GET")
 
+	r.HandleFunc("/api/user/{id}", handlers.UserGetHandler).Methods("GET")
+	r.HandleFunc("/api/user", handlers.UserCreateHandler).Methods("PUT")
+	r.HandleFunc("/api/user/{id}", handlers.TestHandler).Methods("DELETE")
+	r.HandleFunc("/api/user/login/{email}", handlers.TestHandler).Methods("POST")
+	r.HandleFunc("/api/user/{id}", handlers.TestHandler).Methods("PATCH")
+
 	log.Println("Handlers package registered routes.")
 }
