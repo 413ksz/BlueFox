@@ -8,9 +8,11 @@ import (
 
 type User struct {
 	ID                    uuid.UUID  `json:"id" gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
-	Username              string     `json:"username" gorm:"not null;uniqueIndex"`
+	Username              string     `json:"username" gorm:"not null;Index"`
 	Email                 string     `json:"email" gorm:"not null;unique"`
-	PasswordHash          string     `json:"password_hash" gorm:"not null"`
+	Password              string     `json:"password_hash" gorm:"not null"`
+	FirstName             string     `json:"first_name" gorm:"not null"`
+	LastName              string     `json:"last_name" gorm:"not null"`
 	ProfilePictureAssetID *uuid.UUID `json:"profile_picture_asset_id" gorm:"type:uuid"`
 	CreatedAt             time.Time  `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt             *time.Time `json:"updated_at" gorm:"autoUpdateTime"`

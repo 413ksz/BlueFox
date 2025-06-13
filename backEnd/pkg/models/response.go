@@ -18,18 +18,21 @@ type Pagination struct {
 	PreviousLink *string `json:"previousLink,omitempty"`
 }
 
-type ResponseData[TItemtype any, TFieldtype any] struct {
-	Fields     *TFieldtype `json:"fields,omitempty"`
+type ResponseData[TItemtype any] struct {
 	Deleted    *bool       `json:"deleted,omitempty"`
 	Updated    *time.Time  `json:"updated,omitempty"`
 	Pagination *Pagination `json:"pagination,omitempty"`
 	Items      []TItemtype `json:"items"`
 }
 
-type ApiResponse[TItemtype any, TFieldtype any] struct {
-	Context *string                              `json:"context,omitempty"`
-	Method  *string                              `json:"method,omitempty"`
-	Params  map[string]interface{}               `json:"params,omitempty"`
-	Data    *ResponseData[TItemtype, TFieldtype] `json:"data,omitempty"`
-	Error   *CustomError                         `json:"error,omitempty"`
+type ApiResponse[TItemtype any] struct {
+	Context *string                  `json:"context,omitempty"`
+	Method  *string                  `json:"method,omitempty"`
+	Params  map[string]interface{}   `json:"params,omitempty"`
+	Data    *ResponseData[TItemtype] `json:"data,omitempty"`
+	Error   *CustomError             `json:"error,omitempty"`
+}
+
+func NewApiResponse[TItemtype any]() *ApiResponse[TItemtype] {
+	return &ApiResponse[TItemtype]{}
 }
