@@ -1,6 +1,8 @@
 // @refresh reload
 import { createHandler, StartServer } from "@solidjs/start/server";
+import { injectSpeedInsights } from "@vercel/speed-insights";
 
+injectSpeedInsights();
 export default createHandler(() => (
   <StartServer
     document={({ assets, children, scripts }) => (
