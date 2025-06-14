@@ -40,7 +40,7 @@ func InitAppDB() error {
 
 	sqlDB.SetMaxIdleConns(5)
 	sqlDB.SetMaxOpenConns(20)
-	sqlDB.SetConnMaxLifetime(1 * time.Hour)
+	sqlDB.SetConnMaxLifetime(1 * time.Minute)
 
 	log.Println("Global application database connection established and pooled.")
 	return nil
