@@ -36,7 +36,8 @@ func main() {
 	}()
 
 	// Run the migrations
-	database.Migrate(db)
+	// if isFullMigration is true, this function will first **DROP ALL TABLES** corresponding to the registered models before re-creating them.
+	database.Migrate(db, true)
 
 	log.Println("Database migration process completed successfully!")
 }
