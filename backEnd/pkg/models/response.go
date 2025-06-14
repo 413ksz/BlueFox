@@ -5,9 +5,11 @@ import (
 )
 
 type CustomError struct {
-	Domain  string `json:"domain"`
-	Reason  string `json:"reason"`
-	Message string `json:"message"`
+	Code           string `json:"code"`
+	Message        string `json:"message"`
+	Details        any    `json:"details,omitempty"`
+	Err            error  `json:"-"`
+	HTTPStatusCode int    `json:"-"`
 }
 
 type Pagination struct {
