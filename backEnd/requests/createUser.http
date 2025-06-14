@@ -1,40 +1,222 @@
-//test route for user creation
-PUT http://localhost:9000/api/user
+@host = localhost:9000
+
+### Test Case 1: Successful User Creation
+PUT http://{{host}}/api/user
 Content-Type: application/json
 
 {
-  "username": "johndo",
-  "email": "joasdsdssddsdhsdsdnasdsdasdaasdsadsdasdasdoae@xample.com",
-  "password_hash": "securehDashedpa.ssword123",
+  "username": "newuser123",
+  "email": "newuser123@example.com",
+  "password_hash": "StrongPassword!123",
   "first_name": "John",
   "last_name": "Doe",
-  "date_of_birth": "1990-05-15T00:00:00Z"
+  "date_of_birth": "1995-10-26T00:00:00Z",
+  "bio": "A passionate developer.",
+  "location": "San Francisco, USA",
+  "profile_picture_asset_id": "a1b2c3d4-e5f6-7890-1234-567890abcdef"
 }
 
-###
+---
 
-PUT http://localhost:9000/api/user
+### Test Case 2: Successful User Creation (Minimal Required Fields, without optional fields)
+PUT http://{{host}}/api/user
 Content-Type: application/json
 
 {
-  "username": "janesmitasdasdh",
-  "email": "janesmith@examp.le.com",
-  "password_hash": "anothers.trong123hashABC",
+  "username": "minimaluser",
+  "email": "minimal.user@example.com",
+  "password_hash": "SecurePassword!456",
   "first_name": "Jane",
   "last_name": "Smith",
-  "date_of_birth": "1988-11-22T00:00:00Z"
+  "date_of_birth": "2000-01-01T00:00:00Z"
 }
 
-###
+---
 
-PUT  http://localhost:9000/api/user
+### Test Case 3: Error - Missing Required Field (Email)
+PUT http://{{host}}/api/user
 Content-Type: application/json
 
 {
-  "username": "testuser",
-  "email": "valid.email@example.com",
-  "password_hash": "mysecurepa213.Wssword",
+  "username": "missingemail",
+  "password_hash": "ValidPassword!123",
   "first_name": "Test",
   "last_name": "User",
-  "date_of_birth": "2000-01-01T00:00:00Z"
+  "date_of_birth": "1980-01-01T00:00:00Z"
+}
+
+---
+
+### Test Case 4: Error - Missing Required Field (Password)
+PUT http://{{host}}/api/user
+Content-Type: application/json
+
+{
+  "username": "missingpassword",
+  "email": "missing.password_hash@example.com",
+  "first_name": "Test",
+  "last_name": "User",
+  "date_of_birth": "1980-01-01T00:00:00Z"
+}
+
+---
+
+### Test Case 5: Error - Missing Required Field (Username)
+PUT http://{{host}}/api/user
+Content-Type: application/json
+
+{
+  "email": "missing.username@example.com",
+  "password_hash": "ValidPassword!123",
+  "first_name": "Test",
+  "last_name": "User",
+  "date_of_birth": "1980-01-01T00:00:00Z"
+}
+
+---
+
+### Test Case 6: Error - Missing Required Field (First Name)
+PUT http://{{host}}/api/user
+Content-Type: application/json
+
+{
+  "username": "missingfirstname",
+  "email": "missing.first@example.com",
+  "password_hash": "ValidPassword!123",
+  "last_name": "User",
+  "date_of_birth": "1980-01-01T00:00:00Z"
+}
+
+---
+
+### Test Case 7: Error - Missing Required Field (Last Name)
+PUT http://{{host}}/api/user
+Content-Type: application/json
+
+{
+  "username": "missinglastname",
+  "email": "missing.last@example.com",
+  "password_hash": "ValidPassword!123",
+  "first_name": "Test",
+  "date_of_birth": "1980-01-01T00:00:00Z"
+}
+
+---
+
+### Test Case 8: Error - Missing Required Field (Date of Birth)
+PUT http://{{host}}/api/user
+Content-Type: application/json
+
+{
+  "username": "missingdob",
+  "email": "missing.dob@example.com",
+  "password_hash": "ValidPassword!123",
+  "first_name": "Test",
+  "last_name": "User"
+}
+
+---
+
+### Test Case 9: Error - Invalid Email Format
+PUT http://{{host}}/api/user
+Content-Type: application/json
+
+{
+  "username": "invalidemail",
+  "email": "invalid-email-format",
+  "password_hash": "ValidPassword!123",
+  "first_name": "Test",
+  "last_name": "User",
+  "date_of_birth": "1980-01-01T00:00:00Z"
+}
+
+---
+
+### Test Case 10: Error - Invalid Password Format
+PUT http://{{host}}/api/user
+Content-Type: application/json
+
+{
+  "username": "weakpassuser",
+  "email": "weak.password_hash@example.com",
+  "password_hash": "weak",
+  "first_name": "Test",
+  "last_name": "User",
+  "date_of_birth": "1980-01-01T00:00:00Z"
+}
+
+---
+
+### Test Case 11: Error - Invalid Username Format
+PUT http://{{host}}/api/user
+Content-Type: application/json
+
+{
+  "username": "user name with space",
+  "email": "username.space@example.com",
+  "password_hash": "ValidPassword!123",
+  "first_name": "Test",
+  "last_name": "User",
+  "date_of_birth": "1980-01-01T00:00:00Z"
+}
+
+---
+
+### Test Case 12: Error - Invalid First Name Format
+PUT http://{{host}}/api/user
+Content-Type: application/json
+
+{
+  "username": "invalidfirstname",
+  "email": "invalid.first@example.com",
+  "password_hash": "ValidPassword!123",
+  "first_name": "John123",
+  "last_name": "Doe",
+  "date_of_birth": "1980-01-01T00:00:00Z"
+}
+
+---
+
+### Test Case 13: Error - Invalid Last Name Format
+# Assuming your ValidateName does not allow numbers or special characters.
+PUT http://{{host}}/api/user
+Content-Type: application/json
+
+{
+  "username": "invalidlastname",
+  "email": "invalid.last@example.com",
+  "password_hash": "ValidPassword!123",
+  "first_name": "John",
+  "last_name": "Doe#",
+  "date_of_birth": "1980-01-01T00:00:00Z"
+}
+
+---
+
+### Test Case 14: Error - Email Already Exists (Unique Constraint Violation)
+# Use an email address that you know already exists in your database.
+PUT http://{{host}}/api/user
+Content-Type: application/json
+
+{
+  "username": "existingemailuser",
+  "email": "existing.user@example.com",
+  "password_hash": "ValidPassword!123",
+  "first_name": "Conflict",
+  "last_name": "User",
+  "date_of_birth": "1980-01-01T00:00:00Z"
+}
+
+---
+
+### Test Case 15: Error - Invalid JSON Data (Malformed)
+PUT http://{{host}}/api/user
+Content-Type: application/json
+
+{
+  "username": "malformedjson",
+  "email": "malformed@example.com",
+  "password_hash": "Password123!",
+  "first_name": "Test"
+  "last_name": "Error" // Missing comma here
 }
