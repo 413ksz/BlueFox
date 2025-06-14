@@ -6,35 +6,35 @@ import (
 	"net/http"
 
 	"github.com/413ksz/BlueFox/backEnd/pkg/database"
+	"github.com/413ksz/BlueFox/backEnd/pkg/errors"
 	"github.com/413ksz/BlueFox/backEnd/pkg/models"
 	passwordHashing "github.com/413ksz/BlueFox/backEnd/pkg/password_hashing"
 	"github.com/413ksz/BlueFox/backEnd/pkg/validation"
-)
-
-const (
-	PASSWORD_REPLACEMENT = "Nice try"
-)
-
-var (
-	METHOD  = "PUT"
-	CONTEXT = "/api/user"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // UserCreateHandler handles HTTP PUT requests for creating a new user.
 // It expects a JSON request body containing user data, saves it to the database,
-// and returns the created user object with a 201 Created status.
 func UserCreateHandler(w http.ResponseWriter, r *http.Request) {
-	apiResponse := &models.ApiResponse[models.User]{}
+	const (
+		CONTEXT        string = "api/user/"
+		METHOD         string = "PUT"
+		STATUS_DEFAULT int    = http.StatusCreated
+	)
 
-	apiResponse.Method = &METHOD
-	apiResponse.Context = &CONTEXT
+	apiResponse := &models.ApiResponse[models.User]{}
+	apiResponse.Method = METHOD
+	apiResponse.Context = CONTEXT
+	apiResponse.StatusCode = STATUS_DEFAULT
+
 	// Get the GORM database instance from your database package.
 	db := database.DB
 
 	// Check if the database connection is initialized.
 	if db == nil {
-		log.Println("Database connection is not initialized in UserCreateHandler.")
-		http.Error(w, "Internal server error: Database not ready", http.StatusInternalServerError)
+		apiResponse.Error = errors.ERROR_CODE_DATABASE_INITIALIZE.ApiErrorResponse("Database not ready for UserCreateHandler", nil)
+		log.Printf("ERROR: [%s][%s] Database not initialized. Error: %s", apiResponse.Context, apiResponse.Method, apiResponse.Error.Details)
+		models.SendApiResponse(w, apiResponse)
 		return
 	}
 
@@ -43,15 +43,15 @@ func UserCreateHandler(w http.ResponseWriter, r *http.Request) {
 	// Decode the JSON request body into the newUser struct.
 	err := json.NewDecoder(r.Body).Decode(&newUser)
 	if err != nil {
-		log.Printf("Error decoding request body in UserCreateHandler: %v", err)
-		http.Error(w, "Bad request: Invalid JSON data", http.StatusBadRequest)
+		apiResponse.Error = errors.ERROR_CODE_ENCODE_ERROR.ApiErrorResponse("Invalid JSON data", nil)
+		log.Printf("ERROR: [%s][%s] Error decoding request body: %v", apiResponse.Context, apiResponse.Method, err)
+		models.SendApiResponse(w, apiResponse)
 		return
 	}
 
 	apiResponse.Params = map[string]interface{}{
 		"userName":    newUser.Username,
 		"email":       newUser.Email,
-		"password":    PASSWORD_REPLACEMENT,
 		"lastName":    newUser.LastName,
 		"firstName":   newUser.FirstName,
 		"dateOfBirth": newUser.DateOfBirth,
@@ -59,45 +59,52 @@ func UserCreateHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Perform validation checks on the user data.
 	if newUser.Email == "" || newUser.Username == "" || newUser.Password == "" || newUser.FirstName == "" || newUser.LastName == "" || newUser.DateOfBirth.IsZero() {
-		log.Println("Validation error: required fields are missing.")
-		http.Error(w, "Bad request: Missing required fields", http.StatusBadRequest)
+		apiResponse.Error = errors.ERROR_CODE_INVALID_INPUT.ApiErrorResponse("Missing required fields", nil)
+		log.Printf("WARN: [%s][%s] Validation error: required fields are missing. Params: %+v", apiResponse.Context, apiResponse.Method, apiResponse.Params)
+		models.SendApiResponse(w, apiResponse)
 		return
 	}
 
 	if !validation.ValidateEmail(newUser.Email) {
-		log.Println("Validation error: invalid email.")
-		http.Error(w, "Bad request: Invalid email", http.StatusBadRequest)
+		apiResponse.Error = errors.ERROR_CODE_VALIDATION_FAILED.ApiErrorResponse("Invalid email format", nil)
+		log.Printf("WARN: [%s][%s] Validation error: invalid email. Params: %+v", apiResponse.Context, apiResponse.Method, apiResponse.Params)
+		models.SendApiResponse(w, apiResponse)
 		return
 	}
 
 	if !validation.ValidatePassword(newUser.Password) {
-		log.Println("Validation error: invalid password.")
-		http.Error(w, "Bad request: Invalid password", http.StatusBadRequest)
+		apiResponse.Error = errors.ERROR_CODE_VALIDATION_FAILED.ApiErrorResponse("Invalid password format", nil)
+		log.Printf("WARN: [%s][%s] Validation error: invalid password. Params: %+v", apiResponse.Context, apiResponse.Method, apiResponse.Params)
+		models.SendApiResponse(w, apiResponse)
 		return
 	}
 
 	if !validation.ValidateUsername(newUser.Username) {
-		log.Println("Validation error: invalid username.")
-		http.Error(w, "Bad request: Invalid username", http.StatusBadRequest)
+		apiResponse.Error = errors.ERROR_CODE_VALIDATION_FAILED.ApiErrorResponse("Invalid username format", nil)
+		log.Printf("WARN: [%s][%s] Validation error: invalid username. Params: %+v", apiResponse.Context, apiResponse.Method, apiResponse.Params)
+		models.SendApiResponse(w, apiResponse)
 		return
 	}
 
 	if !validation.ValidateName(newUser.FirstName) {
-		log.Println("Validation error: invalid first name.")
-		http.Error(w, "Bad request: Invalid first name", http.StatusBadRequest)
+		apiResponse.Error = errors.ERROR_CODE_VALIDATION_FAILED.ApiErrorResponse("Invalid first name format", nil)
+		log.Printf("WARN: [%s][%s] Validation error: invalid first name. Params: %+v", apiResponse.Context, apiResponse.Method, apiResponse.Params)
+		models.SendApiResponse(w, apiResponse)
 		return
 	}
 
 	if !validation.ValidateName(newUser.LastName) {
-		log.Println("Validation error: invalid last name.")
-		http.Error(w, "Bad request: Invalid last name", http.StatusBadRequest)
+		apiResponse.Error = errors.ERROR_CODE_VALIDATION_FAILED.ApiErrorResponse("Invalid last name format", nil)
+		log.Printf("WARN: [%s][%s] Validation error: invalid last name. Params: %+v", apiResponse.Context, apiResponse.Method, apiResponse.Params)
+		models.SendApiResponse(w, apiResponse)
 		return
 	}
 
 	passwordHash, err := passwordHashing.HashPassword(newUser.Password)
 	if err != nil {
-		log.Printf("Error hashing password: %v", err)
-		http.Error(w, "Internal server error: Failed to hash password", http.StatusInternalServerError)
+		apiResponse.Error = errors.ERROR_CODE_INTERNAL_SERVER.ApiErrorResponse("Failed to hash password", nil)
+		log.Printf("ERROR: [%s][%s] Error hashing password: %v", apiResponse.Context, apiResponse.Method, err)
+		models.SendApiResponse(w, apiResponse)
 		return
 	}
 	newUser.Password = passwordHash
@@ -107,28 +114,38 @@ func UserCreateHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Check for errors returned by the database operation.
 	if result.Error != nil {
-		// Log the detailed database error.
-		log.Printf("Database error creating user: %v", result.Error)
+		// Attempt to unwrap the error to check for specific database driver errors
+		if pgErr, ok := result.Error.(*pgconn.PgError); ok {
+			// Check for PostgreSQL unique violation error code (23505)
+			if pgErr.Code == "23505" {
+				// Differentiate between unique constraints if you have more than one
+				// (e.g., on 'email' and 'username')
+				if pgErr.ConstraintName == "uni_users_email" { // Make sure "uni_users_email" matches your actual unique constraint name for the email field
+					apiResponse.Error = errors.ERROR_UNIQUE_KEY_VIOLATION.ApiErrorResponse("A user with this email address already exists", nil)
+					log.Printf("WARN: [%s][%s] Conflict: User with email '%s' already exists.", apiResponse.Context, apiResponse.Method, newUser.Email)
+					models.SendApiResponse(w, apiResponse)
+					return
+				}
+				// Fallback for any other unique constraint violation not specifically handled
+				apiResponse.Error = errors.ERROR_UNIQUE_KEY_VIOLATION.ApiErrorResponse("A user with similar details already exists", nil)
+				log.Printf("WARN: [%s][%s] Conflict: Unhandled unique constraint violation (code 23505) on constraint: %s", apiResponse.Context, apiResponse.Method, pgErr.ConstraintName)
+				models.SendApiResponse(w, apiResponse)
+				return
+			}
+		}
 
-		http.Error(w, "Internal server error: Failed to create user", http.StatusInternalServerError)
+		// Fallback for any other database errors (e.g., connection issues, other integrity errors)
+		apiResponse.Error = errors.ERROR_CODE_DATABASE_ERROR.ApiErrorResponse("Error creating user due to a database issue", nil)
+		log.Printf("ERROR: [%s][%s] Database error creating user: %v", apiResponse.Context, apiResponse.Method, result.Error)
+		models.SendApiResponse(w, apiResponse)
 		return
 	}
 
-	newUser.Password = PASSWORD_REPLACEMENT
-	// Add the newly created user to the response data.
-	apiResponse.Data = &models.ResponseData[models.User]{}
-	apiResponse.Data.Items = make([]models.User, 0)
-	apiResponse.Data.Items = append(apiResponse.Data.Items, newUser)
+	newUser.Password = "" // Clear the password before sending in the response.
 
-	// Set the Content-Type header to indicate that the response body is JSON.
-	w.Header().Set("Content-Type", "application/json")
+	// If the user is successfully created, return the user data as JSON.
+	apiResponse.Message = "User created successfully."
 
-	// Set the HTTP status code to 201 Created, which is standard for successful resource creation.
-	w.WriteHeader(http.StatusCreated)
-
-	// Encode the newly created user object back into JSON and write it to the response body.
-	err = json.NewEncoder(w).Encode(apiResponse)
-	if err != nil {
-		log.Printf("Error encoding JSON response for created user: %v", err)
-	}
+	log.Printf("INFO: [%s][%s] Successfully created user: %s", apiResponse.Context, apiResponse.Method, newUser.Username)
+	models.SendApiResponse(w, apiResponse)
 }
