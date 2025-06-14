@@ -18,13 +18,15 @@ func UserGetHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Define the context and method for the API response.
 	const (
-		CONTEXT string = "api/user/"
-		METHOD  string = "GET"
+		CONTEXT        string = "api/user/"
+		METHOD         string = "GET"
+		STATUS_DEFAULT int    = http.StatusOK
 	)
 
 	apiResponse := &models.ApiResponse[models.User]{}
 	apiResponse.Method = METHOD
 	apiResponse.Context = CONTEXT
+	apiResponse.StatusCode = STATUS_DEFAULT
 	// Get the GORM database instance.
 	db := database.DB
 
