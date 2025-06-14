@@ -19,6 +19,8 @@ const (
 	ERROR_CODE_INVALID_INPUT       ErrorCode = "INVALID_INPUT"
 	ERROR_CODE_SERVICE_UNAVAILABLE ErrorCode = "SERVICE_UNAVAILABLE"
 	ERROR_CODE_DATABASE_INITIALIZE ErrorCode = "DATABASE_INITIALIZE"
+	ERROR_CODE_ENCODE_ERROR        ErrorCode = "ENCODE_ERROR"
+	ERROR_UNIQUE_KEY_VIOLATION     ErrorCode = "UNIQUE_KEY_VIOLATION"
 )
 
 var ErrorMessages = map[ErrorCode]struct {
@@ -35,9 +37,11 @@ var ErrorMessages = map[ErrorCode]struct {
 	ERROR_CODE_INVALID_INPUT:       {Message: "The provided input is malformed.", Status: http.StatusBadRequest},
 	ERROR_CODE_SERVICE_UNAVAILABLE: {Message: "The service is temporarily unavailable.", Status: http.StatusServiceUnavailable},
 	ERROR_CODE_DATABASE_INITIALIZE: {Message: "Database initialization failed.", Status: http.StatusInternalServerError},
+	ERROR_CODE_ENCODE_ERROR:        {Message: "Error encoding response.", Status: http.StatusInternalServerError},
+	ERROR_UNIQUE_KEY_VIOLATION:     {Message: "A unique key violation occurred.", Status: http.StatusConflict},
 }
 
-func (code ErrorCode) ApiErrorResponse(details any, err error) models.CustomError {
+func (code ErrorCode) ApiErrorResponse(details any, err error) *models.CustomError {
 	responseData := models.CustomError{}
 	responseInfo, ok := ErrorMessages[code]
 
@@ -46,11 +50,11 @@ func (code ErrorCode) ApiErrorResponse(details any, err error) models.CustomErro
 		responseData.Message = ErrorMessages[ERROR_CODE_GENERIC].Message
 		responseData.HTTPStatusCode = ErrorMessages[ERROR_CODE_GENERIC].Status
 		responseData.Code = string(ERROR_CODE_GENERIC)
-		return responseData
+		return &responseData
 	}
 
 	// If the code is found in the map, return the corresponding error
-	return models.CustomError{
+	return &models.CustomError{
 		Code:           string(code),
 		Message:        responseInfo.Message,
 		HTTPStatusCode: responseInfo.Status,
