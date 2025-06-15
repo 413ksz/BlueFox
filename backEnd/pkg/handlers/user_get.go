@@ -4,8 +4,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/413ksz/BlueFox/backEnd/pkg/apierrors"
 	"github.com/413ksz/BlueFox/backEnd/pkg/database"
-	"github.com/413ksz/BlueFox/backEnd/pkg/errors"
 	"github.com/413ksz/BlueFox/backEnd/pkg/models"
 	"github.com/gorilla/mux"
 	"gorm.io/gorm"
@@ -32,7 +32,7 @@ func UserGetHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Check if the database connection is initialized.
 	if db == nil {
-		apiResponse.Error = errors.ERROR_CODE_DATABASE_INITIALIZE.ApiErrorResponse("Database not ready for UserGetHandler", nil)
+		apiResponse.Error = apierrors.ERROR_CODE_DATABASE_INITIALIZE.ApiErrorResponse("Database not ready for UserGetHandler", nil)
 		log.Printf("ERROR: [%s][%s] Database not initialized. Error: %s", apiResponse.Context, apiResponse.Method, apiResponse.Error.Details)
 		models.SendApiResponse(w, apiResponse)
 		return
@@ -50,7 +50,7 @@ func UserGetHandler(w http.ResponseWriter, r *http.Request) {
 	if userID == "" {
 		// This should ideally not happen if the route is defined correctly with {id},
 		// but it's a good defensive check.
-		apiResponse.Error = errors.ERROR_CODE_INVALID_INPUT.ApiErrorResponse("User ID missing from path", nil)
+		apiResponse.Error = apierrors.ERROR_CODE_INVALID_INPUT.ApiErrorResponse("User ID missing from path", nil)
 		log.Printf("WARN: [%s][%s] Invalid input: User ID missing from path. Params: %+v", apiResponse.Context, apiResponse.Method, apiResponse.Params)
 		models.SendApiResponse(w, apiResponse)
 		return
@@ -66,13 +66,13 @@ func UserGetHandler(w http.ResponseWriter, r *http.Request) {
 	if result.Error != nil {
 		// If gorm.ErrRecordNotFound is returned, it means no user with that ID was found.
 		if result.Error == gorm.ErrRecordNotFound {
-			apiResponse.Error = errors.ERROR_CODE_DATABASE_ERROR.ApiErrorResponse("User not found", nil)
+			apiResponse.Error = apierrors.ERROR_CODE_DATABASE_ERROR.ApiErrorResponse("User not found", nil)
 			models.SendApiResponse(w, apiResponse)
 			log.Printf("INFO: [%s][%s] User not found for ID: %s", apiResponse.Context, apiResponse.Method, userID)
 			return
 		}
 		// If there's any other error, log it and return an internal server error.
-		apiResponse.Error = errors.ERROR_CODE_DATABASE_ERROR.ApiErrorResponse("Error fetching user", nil)
+		apiResponse.Error = apierrors.ERROR_CODE_DATABASE_ERROR.ApiErrorResponse("Error fetching user", nil)
 		log.Printf("ERROR: [%s][%s] Database error fetching user ID %s: %v", apiResponse.Context, apiResponse.Method, userID, result.Error)
 		models.SendApiResponse(w, apiResponse)
 		return

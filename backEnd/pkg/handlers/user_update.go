@@ -8,8 +8,8 @@ import (
 	// Required for time.Time in DTO
 	// Required for uuid.UUID in DTO
 
+	"github.com/413ksz/BlueFox/backEnd/pkg/apierrors"
 	"github.com/413ksz/BlueFox/backEnd/pkg/database"
-	"github.com/413ksz/BlueFox/backEnd/pkg/errors"
 	"github.com/413ksz/BlueFox/backEnd/pkg/models"
 	passwordHashing "github.com/413ksz/BlueFox/backEnd/pkg/password_hashing"
 	"github.com/413ksz/BlueFox/backEnd/pkg/validation"
@@ -40,7 +40,7 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Check if the database connection is initialized.
 	if db == nil {
-		apiResponse.Error = errors.ERROR_CODE_DATABASE_INITIALIZE.ApiErrorResponse("Database not ready for UserUpdateHandler", nil)
+		apiResponse.Error = apierrors.ERROR_CODE_DATABASE_INITIALIZE.ApiErrorResponse("Database not ready for UserUpdateHandler", nil)
 		log.Printf("ERROR: [%s][%s] Database not initialized. Error: %s", apiResponse.Context, apiResponse.Method, apiResponse.Error.Details)
 		models.SendApiResponse(w, apiResponse)
 		return
@@ -57,7 +57,7 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Validate that the user ID is present in the path.
 	if userID == "" {
-		apiResponse.Error = errors.ERROR_CODE_INVALID_INPUT.ApiErrorResponse("User ID missing from path", nil)
+		apiResponse.Error = apierrors.ERROR_CODE_INVALID_INPUT.ApiErrorResponse("User ID missing from path", nil)
 		log.Printf("WARN: [%s][%s] Invalid input: User ID missing from path. Params: %+v", apiResponse.Context, apiResponse.Method, apiResponse.Params)
 		models.SendApiResponse(w, apiResponse)
 		return
@@ -70,13 +70,13 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			// User not found is a client-side error (404 Not Found)
-			apiResponse.Error = errors.ERROR_CODE_NOT_FOUND.ApiErrorResponse("User not found", nil)
+			apiResponse.Error = apierrors.ERROR_CODE_NOT_FOUND.ApiErrorResponse("User not found", nil)
 			log.Printf("INFO: [%s][%s] User not found for ID: %s", apiResponse.Context, apiResponse.Method, userID)
 			models.SendApiResponse(w, apiResponse)
 			return
 		}
 		// Other database errors are internal server errors
-		apiResponse.Error = errors.ERROR_CODE_DATABASE_ERROR.ApiErrorResponse("Error fetching user for update", nil)
+		apiResponse.Error = apierrors.ERROR_CODE_DATABASE_ERROR.ApiErrorResponse("Error fetching user for update", nil)
 		log.Printf("ERROR: [%s][%s] Database error fetching user ID %s: %v", apiResponse.Context, apiResponse.Method, userID, result.Error)
 		models.SendApiResponse(w, apiResponse)
 		return
@@ -86,7 +86,7 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	// Decode the JSON request body into the models.User struct.
 	err := json.NewDecoder(r.Body).Decode(&updates)
 	if err != nil {
-		apiResponse.Error = errors.ERROR_CODE_ENCODE_ERROR.ApiErrorResponse("Invalid JSON data for update", nil)
+		apiResponse.Error = apierrors.ERROR_CODE_ENCODE_ERROR.ApiErrorResponse("Invalid JSON data for update", nil)
 		log.Printf("ERROR: [%s][%s] Error decoding request body for user update: %v", apiResponse.Context, apiResponse.Method, err)
 		models.SendApiResponse(w, apiResponse)
 		return
@@ -145,7 +145,7 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	// Validate email format if email was provided in the update.
 	if _, ok := updateParams["email"]; ok {
 		if !validation.ValidateEmail(updateParams["email"].(string)) {
-			apiResponse.Error = errors.ERROR_CODE_VALIDATION_FAILED.ApiErrorResponse("Invalid email format", nil)
+			apiResponse.Error = apierrors.ERROR_CODE_VALIDATION_FAILED.ApiErrorResponse("Invalid email format", nil)
 			log.Printf("WARN: [%s][%s] Validation error: invalid email for update. Params: %+v", apiResponse.Context, apiResponse.Method, apiResponse.Params)
 			models.SendApiResponse(w, apiResponse)
 			return
@@ -156,7 +156,7 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	if updates.Password != "" { // Check from the DTO, which holds the raw password input
 		println("whyimhere")
 		if !validation.ValidatePassword(updates.Password) { // Validate the raw password
-			apiResponse.Error = errors.ERROR_CODE_VALIDATION_FAILED.ApiErrorResponse("Invalid password format", nil)
+			apiResponse.Error = apierrors.ERROR_CODE_VALIDATION_FAILED.ApiErrorResponse("Invalid password format", nil)
 			log.Printf("WARN: [%s][%s] Validation error: invalid password for update. Params: %+v", apiResponse.Context, apiResponse.Method, apiResponse.Params)
 			models.SendApiResponse(w, apiResponse)
 			return
@@ -164,7 +164,7 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		// Hash the new password before adding it to updateParams.
 		hashedPassword, err := passwordHashing.HashPassword(updates.Password)
 		if err != nil {
-			apiResponse.Error = errors.ERROR_CODE_INTERNAL_SERVER.ApiErrorResponse("Failed to hash new password", nil)
+			apiResponse.Error = apierrors.ERROR_CODE_INTERNAL_SERVER.ApiErrorResponse("Failed to hash new password", nil)
 			log.Printf("ERROR: [%s][%s] Error hashing new password for user ID %s: %v", apiResponse.Context, apiResponse.Method, userID, err)
 			models.SendApiResponse(w, apiResponse)
 			return
@@ -175,7 +175,7 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	// Validate username format if username was provided.
 	if _, ok := updateParams["username"]; ok {
 		if !validation.ValidateUsername(updateParams["username"].(string)) {
-			apiResponse.Error = errors.ERROR_CODE_VALIDATION_FAILED.ApiErrorResponse("Invalid username format", nil)
+			apiResponse.Error = apierrors.ERROR_CODE_VALIDATION_FAILED.ApiErrorResponse("Invalid username format", nil)
 			log.Printf("WARN: [%s][%s] Validation error: invalid username for update. Params: %+v", apiResponse.Context, apiResponse.Method, apiResponse.Params)
 			models.SendApiResponse(w, apiResponse)
 			return
@@ -185,7 +185,7 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	// Validate first name format if first name was provided.
 	if _, ok := updateParams["first_name"]; ok {
 		if !validation.ValidateName(updateParams["first_name"].(string)) {
-			apiResponse.Error = errors.ERROR_CODE_VALIDATION_FAILED.ApiErrorResponse("Invalid first name format", nil)
+			apiResponse.Error = apierrors.ERROR_CODE_VALIDATION_FAILED.ApiErrorResponse("Invalid first name format", nil)
 			log.Printf("WARN: [%s][%s] Validation error: invalid first name for update. Params: %+v", apiResponse.Context, apiResponse.Method, apiResponse.Params)
 			models.SendApiResponse(w, apiResponse)
 			return
@@ -195,7 +195,7 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	// Validate last name format if last name was provided.
 	if _, ok := updateParams["last_name"]; ok {
 		if !validation.ValidateName(updateParams["last_name"].(string)) {
-			apiResponse.Error = errors.ERROR_CODE_VALIDATION_FAILED.ApiErrorResponse("Invalid last name format", nil)
+			apiResponse.Error = apierrors.ERROR_CODE_VALIDATION_FAILED.ApiErrorResponse("Invalid last name format", nil)
 			log.Printf("WARN: [%s][%s] Validation error: invalid last name for update. Params: %+v", apiResponse.Context, apiResponse.Method, apiResponse.Params)
 			models.SendApiResponse(w, apiResponse)
 			return
@@ -213,19 +213,19 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request) {
 			if pgErr.Code == "23505" { // Unique violation error code
 				// Handle email unique constraint specifically
 				if pgErr.ConstraintName == "uni_users_email" {
-					apiResponse.Error = errors.ERROR_UNIQUE_KEY_VIOLATION.ApiErrorResponse("A user with this email address already exists", nil)
+					apiResponse.Error = apierrors.ERROR_CODE_UNIQUE_KEY_VIOLATION.ApiErrorResponse("A user with this email address already exists", nil)
 					log.Printf("WARN: [%s][%s] Conflict: User with email '%s' already exists during update for ID: %s.", apiResponse.Context, apiResponse.Method, updates.Email, userID)
 					models.SendApiResponse(w, apiResponse)
 					return
 				}
-				apiResponse.Error = errors.ERROR_UNIQUE_KEY_VIOLATION.ApiErrorResponse("A user with similar details already exists", nil)
+				apiResponse.Error = apierrors.ERROR_CODE_UNIQUE_KEY_VIOLATION.ApiErrorResponse("A user with similar details already exists", nil)
 				log.Printf("WARN: [%s][%s] Conflict: Unhandled unique constraint violation (code 23505) on constraint %s for user ID %s", apiResponse.Context, apiResponse.Method, pgErr.ConstraintName, userID)
 				models.SendApiResponse(w, apiResponse)
 				return
 			}
 		}
 		// Handle generic database errors
-		apiResponse.Error = errors.ERROR_CODE_DATABASE_ERROR.ApiErrorResponse("Error updating user due to a database issue", nil)
+		apiResponse.Error = apierrors.ERROR_CODE_DATABASE_ERROR.ApiErrorResponse("Error updating user due to a database issue", nil)
 		log.Printf("ERROR: [%s][%s] Database error updating user ID %s: %v", apiResponse.Context, apiResponse.Method, userID, result.Error)
 		models.SendApiResponse(w, apiResponse)
 		return
@@ -236,7 +236,7 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	result = db.First(&existingUser, "id = ?", userID)
 	if result.Error != nil {
 		// This scenario should be rare if the update just succeeded, but handles potential issues.
-		apiResponse.Error = errors.ERROR_CODE_DATABASE_ERROR.ApiErrorResponse("Successfully updated user but failed to re-fetch", nil)
+		apiResponse.Error = apierrors.ERROR_CODE_DATABASE_ERROR.ApiErrorResponse("Successfully updated user but failed to re-fetch", nil)
 		log.Printf("ERROR: [%s][%s] Successfully updated user ID %s but failed to re-fetch it: %v", apiResponse.Context, apiResponse.Method, userID, result.Error)
 		models.SendApiResponse(w, apiResponse)
 		return
