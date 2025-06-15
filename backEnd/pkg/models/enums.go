@@ -1,6 +1,6 @@
 package models
 
-// Enums
+// Enums for gorm models
 type Status string
 
 const (
