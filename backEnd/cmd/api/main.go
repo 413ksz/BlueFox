@@ -1,4 +1,6 @@
-package handler
+// Package handler is the entry point for the serverless function hosted on serverless invironment on Vercel.
+// if you want to run locally, you can run go run main.go and change the package to main
+package main
 
 import (
 	"log"
