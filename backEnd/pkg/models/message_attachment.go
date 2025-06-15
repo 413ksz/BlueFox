@@ -4,10 +4,16 @@ import (
 	"github.com/google/uuid"
 )
 
+// MessageAttachment table gorm model
 type MessageAttachment struct {
-	ID           uuid.UUID  `json:"id" gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
-	MessageID    uuid.UUID  `json:"message_id" gorm:"uniqueIndex:idx_message_media;type:uuid"`
-	MediaAssetID uuid.UUID  `json:"media_asset_id" gorm:"uniqueIndex:idx_message_media;type:uuid"`
-	Message      Message    `gorm:"foreignKey:MessageID;references:ID"`
-	MediaAsset   MediaAsset `gorm:"foreignKey:MediaAssetID;references:ID"`
+	// Base Fields
+	ID uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+
+	// Composite Unique Index (Foreign Keys)
+	MessageID    uuid.UUID `gorm:"not null;type:uuid;uniqueIndex:idx_message_media_unique,priority:1"`
+	MediaAssetID uuid.UUID `gorm:"not null;type:uuid;uniqueIndex:idx_message_media_unique,priority:2"`
+
+	// Relations
+	Message    Message    `gorm:"foreignKey:MessageID"`    // Relation: An attachment belongs to one message
+	MediaAsset MediaAsset `gorm:"foreignKey:MediaAssetID"` // Relation: An attachment links to one media asset
 }

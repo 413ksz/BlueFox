@@ -6,14 +6,22 @@ import (
 	"github.com/google/uuid"
 )
 
+// MediaAsset table gorm model
 type MediaAsset struct {
-	ID               uuid.UUID  `json:"id" gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
-	Filename         string     `json:"filename" gorm:"not null"`
-	FilePath         string     `json:"file_path" gorm:"not null"`
-	FileSize         int        `json:"file_size"`
-	MimeType         AssetType  `json:"mime_type" gorm:"type:varchar(50);not null"`
-	AssetType        string     `json:"asset_type" gorm:"not null"`
-	CreatedAt        time.Time  `json:"created_at" gorm:"autoCreateTime"`
-	UploadedByUserID *uuid.UUID `json:"uploaded_by_user_id" gorm:"type:uuid"`
-	UploadedByUser   User       `gorm:"foreignKey:UploadedByUserID;references:ID"`
+	// Base Fields
+	ID        uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	Filename  string    `gorm:"not null"`
+	UrlPath   string    `gorm:"not null"` // URL path to the file
+	FileSize  int
+	MimeType  AssetType `gorm:"not null"`
+	CreatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP"`
+
+	// Foreign Key for Uploader (Optional)
+	UploadedByUserID *uuid.UUID `gorm:"type:uuid"` // Optional: Track who uploaded it
+
+	// Relations
+	UploadedByUser      *User               `gorm:"foreignKey:UploadedByUserID"`      // Relation: A media asset can be uploaded by a user
+	MessageAttachments  []MessageAttachment `gorm:"foreignKey:MediaAssetID"`          // Relation: A media asset can be part of many message attachments
+	UserProfilePictures []User              `gorm:"foreignKey:ProfilePictureAssetID"` // Relation: A media asset can be a profile picture for multiple users
+	ServerIcons         []Server            `gorm:"foreignKey:IconAssetID"`           // Relation: A media asset can be an icon for multiple servers
 }
