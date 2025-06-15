@@ -45,8 +45,6 @@ func NewApiResponse[TItemtype any]() *ApiResponse[TItemtype] {
 }
 
 func SendApiResponse[T any](w http.ResponseWriter, apiResponse *ApiResponse[T]) {
-	w.Header().Set("Content-Type", "application/json")
-
 	// Write the determined HTTP status code to the response header
 	if apiResponse.Error != nil {
 		w.WriteHeader(apiResponse.Error.HTTPStatusCode)
