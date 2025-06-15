@@ -4,9 +4,13 @@ import (
 	"github.com/google/uuid"
 )
 
+// ServerUserConnect table gorm model
 type ServerUserConnect struct {
-	ServerID uuid.UUID `json:"server_id" gorm:"primaryKey;type:uuid"`
-	UserID   uuid.UUID `json:"user_id" gorm:"primaryKey;type:uuid"`
-	Server   Server    `gorm:"foreignKey:ServerID;references:ID"`
-	User     User      `gorm:"foreignKey:UserID;references:ID"`
+	// Composite Primary Keys (Foreign Keys)
+	ServerID uuid.UUID `gorm:"not null;type:uuid;primaryKey;autoIncrement:false"`
+	UserID   uuid.UUID `gorm:"not null;type:uuid;primaryKey;autoIncrement:false"`
+
+	// Relations
+	Server Server `gorm:"foreignKey:ServerID"` // Relation: Connects to the server
+	User   User   `gorm:"foreignKey:UserID"`   // Relation: Connects to the user
 }

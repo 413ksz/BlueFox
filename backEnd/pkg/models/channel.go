@@ -5,13 +5,19 @@ import (
 )
 
 type Channel struct {
-	ID            uuid.UUID   `json:"id" gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
-	ServerID      uuid.UUID   `json:"server_id" gorm:"not null;type:uuid"`
-	Name          *string     `json:"name"`
-	Icon          *string     `json:"icon"`
-	Type          ChannelType `json:"type" gorm:"type:varchar(20)"`
-	Topic         *string     `json:"topic"`
-	Parent        *uuid.UUID  `json:"parent" gorm:"type:uuid"`
-	Server        Server      `gorm:"foreignKey:ServerID;references:ID"`
-	ParentChannel *Channel    `gorm:"foreignKey:Parent;references:ID"`
+	// Base Fields
+	ID       uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ServerID uuid.UUID `gorm:"not null;type:uuid"`
+	Name     string
+	Icon     *string
+	Type     ChannelType
+	Topic    *string
+
+	// Foreign Key for Parent Channel (for nested channels/categories)
+	Parent *uuid.UUID `gorm:"type:uuid"` // Can be null for top-level channels
+
+	// Relations
+	Server        Server    `gorm:"foreignKey:ServerID"` // Relation: A channel belongs to one server
+	ParentChannel *Channel  `gorm:"foreignKey:Parent"`   // Relation: A channel can have a parent channel
+	ChildChannels []Channel `gorm:"foreignKey:Parent"`   // Relation: A channel can have many child channels
 }
