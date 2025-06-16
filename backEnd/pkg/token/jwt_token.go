@@ -79,6 +79,9 @@ func VerifyJWTToken(tokenString string) (*models.MyClaims, error) {
 	// Convert the JWT_SECRET_KEY to a byte slice for JWT parsing
 	jwtSecretKey := []byte(jwtSecretKeyStr)
 
+	// Define the expected audience for the token.
+	expectedAudience := "users"
+
 	// Parse the token
 	token, err := jwt.ParseWithClaims(tokenString, &models.MyClaims{}, func(token *jwt.Token) (interface{}, error) {
 		// Validate the alg is what we expect:
@@ -87,7 +90,7 @@ func VerifyJWTToken(tokenString string) (*models.MyClaims, error) {
 			return nil, apierrors.ERROR_CODE_UNAUTHORIZED
 		}
 		return jwtSecretKey, nil
-	})
+	}, jwt.WithAudience(expectedAudience))
 
 	// If token parsing fails, return an error
 	if err != nil {
