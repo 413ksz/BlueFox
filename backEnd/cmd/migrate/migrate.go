@@ -28,25 +28,44 @@ func init() {
 // A fatal error occurs if DATABASE_URL is not provided or if the database connection fails.
 func main() {
 	// --- Database Migration Process ---
-	log.Info().Str("event", "migration_start").Msg("Starting database migration process")
+	log.Info().
+		Str("component", "migration_script").
+		Str("event", "migration_process_start").
+		Msg("Starting database migration process")
 
 	// Check if DATABASE_URL is set
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		log.Fatal().Str("event", "env_var_missing").Msg("Error: DATABASE_URL environment variable is not set. Cannot run migrations.")
+		log.Fatal().
+			Str("component", "migration_script").
+			Str("event", "env_var_missing").
+			Msg("Error: DATABASE_URL environment variable is not set. Cannot run migrations.")
 	}
 
-	log.Info().Str("event", "env_var_checked").Msg("DATABASE_URL environment variable found.")
+	log.Info().
+		Str("component", "migration_script").
+		Str("event", "env_var_checked").
+		Msg("DATABASE_URL environment variable found.")
 
 	// Connect to the database
-	log.Info().Str("event", "db_connect_attempt").Msg("Attempting to connect to database for migration...")
+	log.Info().
+		Str("component", "migration_script").
+		Str("event", "db_connect_attempt").
+		Msg("Attempting to connect to database for migration...")
 
 	db, err := database.ConnectMigrateDB(dbURL) // Using a dedicated function for migration DB connection for direct connectivity
 	if err != nil {
 		// Use Fatal for critical errors during database connection
-		log.Fatal().Err(err).Str("event", "db_connect_failure").Msg("Error connecting to database for migration")
+		log.Fatal().
+			Err(err).
+			Str("component", "migration_script").
+			Str("event", "db_connect_failure").
+			Msg("Error connecting to database for migration")
 	}
-	log.Info().Str("event", "db_connected").Msg("Successfully connected to database for migration.")
+	log.Info().
+		Str("component", "migration_script").
+		Str("event", "db_connected_success").
+		Msg("Successfully connected to database for migration.")
 
 	// Defer closing the database connection
 	defer func() {
@@ -54,19 +73,37 @@ func main() {
 		if closeErr == nil {
 			if err := sqlDB.Close(); err != nil {
 				// Use Error for non-fatal errors that should still be logged
-				log.Error().Err(err).Str("event", "db_close_failure").Msg("Error closing database connection")
+				log.Error().
+					Err(err).
+					Str("component", "migration_script").
+					Str("event", "db_close_failure").
+					Msg("Error closing database connection")
 			} else {
-				log.Info().Str("event", "db_closed").Msg("Database connection successfully closed.")
+				log.Info().
+					Str("component", "migration_script").
+					Str("event", "db_closed_success").
+					Msg("Database connection successfully closed.")
 			}
 		} else {
-			log.Error().Err(closeErr).Str("event", "get_sql_db_failure").Msg("Error getting underlying SQL DB for closing")
+			log.Error().
+				Err(closeErr).
+				Str("component", "migration_script").
+				Str("event", "get_sql_db_for_close_failure").
+				Msg("Error getting underlying SQL DB for closing")
 		}
 	}()
 
 	// Run the migrations
-	log.Info().Bool("isFullMigration", true).Str("event", "migrations_run_start").Msg("Running database migrations...")
+	log.Info().
+		Str("component", "migration_script").
+		Str("event", "migrations_run_start").
+		Bool("is_full_migration", true).
+		Msg("Running database migrations...")
 	// if isFullMigration is true, this function will first **DROP ALL TABLES** corresponding to the registered models before re-creating them.
 	database.Migrate(db, true)
 
-	log.Info().Str("event", "migration_complete").Msg("Database migration process completed successfully!")
+	log.Info().
+		Str("component", "migration_script").
+		Str("event", "migration_process_complete").
+		Msg("Database migration process completed successfully!")
 }

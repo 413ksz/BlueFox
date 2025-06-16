@@ -1,6 +1,6 @@
 // Handler is the primary entry point for the serverless function hosted on Vercel
 // Rename this package to main to run run the server locally
-package handler
+package main
 
 import (
 	"net/http"
@@ -39,18 +39,32 @@ func init() {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}).
 			With().Timestamp().Caller().Logger()
+		log.Debug().
+			Str("component", "main_app").
+			Str("event", "debug_mode_enabled").
+			Msg("Debug mode enabled, logging to console and setting debug level")
 	}
 
-	log.Info().Msg("Serverless function initializing...")
+	log.Info().
+		Str("component", "main_app").
+		Str("event", "app_init_start").
+		Msg("Serverless function initializing...")
 
 	// --- Database Configuration ---
 
 	// Initialize the global database connection
 	if err := database.InitAppDB(); err != nil {
-		log.Fatal().Err(err).Msg("Failed to initialize global database")
+		log.Fatal().
+			Err(err).
+			Str("component", "main_app").
+			Str("event", "app_db_init_failure").
+			Msg("Failed to initialize global database")
 	}
 
-	log.Info().Msg("Global database connection successfully initialized.")
+	log.Info().
+		Str("component", "main_app").
+		Str("event", "app_db_init_success").
+		Msg("Global database connection successfully initialized.")
 
 	// --- API Routes ---
 	// Initialize the API router
@@ -58,16 +72,21 @@ func init() {
 	// Register the API routes
 	router.RegisterRoutes(appRouter)
 
-	log.Info().Msg("API routes initialized.")
+	log.Info().
+		Str("component", "main_app").
+		Str("event", "api_routes_initialized").
+		Msg("API routes initialized.")
 }
 
 // Handler is the primary entry point for the serverless function hosted on serverless environment.
 func Handler(w http.ResponseWriter, r *http.Request) {
 	// --- HTTP Request Handler ---
 	log.Info().
-		Str("event", "request_received").
+		Str("component", "main_app_handler").
+		Str("event", "http_request_received").
 		Str("method", r.Method).
 		Str("path", r.URL.Path).
+		Str("remote_addr", r.RemoteAddr).
 		Msg("Incoming HTTP request")
 
 	// Serve the request to the router
@@ -80,10 +99,19 @@ func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
+		log.Warn().
+			Str("component", "main_local_server").
+			Str("event", "port_env_var_missing").
+			Str("default_port", port).
+			Msg("PORT environment variable not set, defaulting to 8080")
 	}
 	addr := ":" + port
 
-	log.Debug().Str("address", addr).Msg("Starting local HTTP server for testing routes...")
+	log.Info().
+		Str("component", "main_local_server").
+		Str("event", "local_server_start_attempt").
+		Str("listen_address", addr).
+		Msg("Starting local HTTP server for testing routes...")
 
 	// --- CORS Middleware ---
 
@@ -102,6 +130,11 @@ func main() {
 	// --- Local Server Start ---
 	// Start the local HTTP server
 	if err := http.ListenAndServe(addr, handlerWithCORS); err != nil {
-		log.Fatal().Err(err).Str("address", addr).Msg("Local HTTP server failed to start or stopped unexpectedly")
+		log.Fatal().
+			Err(err).
+			Str("component", "main_local_server").
+			Str("event", "local_server_failure").
+			Str("listen_address", addr).
+			Msg("Local HTTP server failed to start or stopped unexpectedly")
 	}
 }
