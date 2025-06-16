@@ -9,11 +9,13 @@ const (
 	// USERNAME_PATTERN defines the regex for valid usernames.
 	// It allows 3-20 alphanumeric characters, including underscores or hyphens in the middle,
 	// but prevents them at the very beginning or end.
-	USERNAME_PATTERN = `^[a-zA-Z0-9](?:[a-zA-Z0-9_-]{1,18}[a-zA-Z0-9])?$`
+	// Ensures a minimum length of 3 and prevents leading/trailing/double hyphens/underscores.
+	USERNAME_PATTERN = `^[a-zA-Z0-9][a-zA-Z0-9_-]{1,18}[a-zA-Z0-9]$`
 
 	// EMAIL_PATTERN defines the regex for valid email addresses.
-	// It's a common pattern that covers most standard email formats.
-	EMAIL_PATTERN = `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
+	// It's a common pattern that covers most standard email formats, with strict local part rules.
+	// Prevents leading, trailing, or consecutive dots in the local part.
+	EMAIL_PATTERN = `^[a-zA-Z0-9_+-]+(?:\.[a-zA-Z0-9_+-]+)*@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
 
 	// NAME_PATTERN defines the regex for first and last names.
 	// It requires names to be 3-20 characters long, starting and ending with a letter.

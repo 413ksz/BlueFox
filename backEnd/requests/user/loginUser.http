@@ -1,0 +1,71 @@
+// test route for user login
+@baseUrl =http://localhost:9000
+
+### 1. Successful Login
+POST {{baseUrl}}/api/user/login
+Content-Type: application/json
+
+{
+  "email": "newuser123@example.com",
+  "password_hash": "StrongPassword!123"
+}
+
+### 2. Invalid Credentials (Incorrect Password)
+POST {{baseUrl}}/api/user/login
+Content-Type: application/json
+
+{
+  "email": "newuser123@example.com",
+  "password_hash": "WrongPassword123!"
+}
+
+### 3. User Not Found (Non-existent Email)
+POST {{baseUrl}}/api/user/login
+Content-Type: application/json
+
+{
+  "email": "nonexistent@example.com",
+  "password_hash": "AnyPassword123!"
+}
+
+### 4. Missing Email Field
+POST {{baseUrl}}/api/user/login
+Content-Type: application/json
+
+{
+  "password": "StrongPassword123!"
+}
+
+### 5. Missing Password Field
+POST {{baseUrl}}/api/user/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com"
+}
+
+### 6. Invalid Email Format
+POST {{baseUrl}}/api/user/login
+Content-Type: application/json
+
+{
+  "email": "invalid-email",
+  "password": "StrongPassword123!"
+}
+
+### 7. Invalid Password Format
+POST {{baseUrl}}/api/user/login
+Content-Type: application/json
+
+{
+  "email": "newuser123@example.com",
+  "password_hash": "weak"
+}
+
+### 8. Malformed JSON Body
+POST {{baseUrl}}/api/user/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "StrongPassword123!"

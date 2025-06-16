@@ -1,0 +1,145 @@
+# Test for testing the update user route
+@host = localhost:9000
+@userId = 6738e4eb-f36c-4ac7-8e2a-34157f3eeb66
+
+### Test Case 1: Successful Update - Change Username
+PATCH http://{{host}}/api/user/{{userId}}
+Content-Type: application/json
+
+{
+  "username": "newusername123"
+}
+
+### Test Case 2: Successful Update - Change Email
+# Ensure this email is not already taken in your database.
+PATCH http://{{host}}/api/user/{{userId}}
+Content-Type: application/json
+
+{
+  "email": "new.email@example.com"
+}
+
+### Test Case 3: Successful Update - Change Password
+# The password must meet your validation criteria (e.g., minimum length, complexity).
+PATCH http://{{host}}/api/user/{{userId}}
+Content-Type: application/json
+
+{
+  "password": "StrongPassword!123"
+}
+
+### Test Case 4: Successful Update - Change First Name, Last Name, and Bio
+PATCH http://{{host}}/api/user/{{userId}}
+Content-Type: application/json
+
+{
+  "first_name": "UpdatedFirstName",
+  "last_name": "UpdatedLastName",
+  "bio": "This is an updated biography for the user. It can be null too, if passed as null."
+}
+
+### Test Case 5: Successful Update - Clear Bio (send null for pointer field)
+PATCH http://{{host}}/api/user/{{userId}}
+Content-Type: application/json
+
+{
+  "bio": null
+}
+
+### Test Case 6: Successful Update - Change DateOfBirth
+PATCH http://{{host}}/api/user/{{userId}}
+Content-Type: application/json
+
+{
+  "date_of_birth": "1990-05-15T00:00:00Z"
+}
+
+### Test Case 7: Successful Update - Multiple Fields (Mixed Types)
+PATCH http://{{host}}/api/user/{{userId}}
+Content-Type: application/json
+
+{
+  "username": "multiupdateuser",
+  "email": "multi.update@example.com",
+  "first_name": "Multi",
+  "last_name": "Field",
+  "location": "New City, Country",
+  "date_of_birth": "1985-11-22T00:00:00Z"
+}
+
+### Test Case 8: Error - User ID Missing from Path
+PATCH http://{{host}}/api/user/
+Content-Type: application/json
+
+{
+  "username": "testuser"
+}
+
+### Test Case 9: Error - User Not Found (Valid UUID, but non-existent)
+# Replace with a valid UUID that definitely does not exist in your DB.
+PATCH http://{{host}}/api/user/00000000-0000-0000-0000-000000000000
+Content-Type: application/json
+
+{
+  "username": "nonexistent_user"
+}
+
+### Test Case 10: Error - Invalid JSON Data (Malformed)
+# This request body is intentionally malformed.
+PATCH http://{{host}}/api/user/{{userId}}
+Content-Type: application/json
+
+{
+  "username": "malformed_json",
+  "emil": "invalid@example.com",
+  "HaEzFrissülAkkorBajVAn": "Lófasz"
+}
+
+### Test Case 11: Error - Invalid Email Format
+PATCH http://{{host}}/api/user/{{userId}}
+Content-Type: application/json
+
+{
+  "email": "invalid-email"
+}
+
+### Test Case 12: Error - Invalid Password Format
+PATCH http://{{host}}/api/user/{{userId}}
+Content-Type: application/json
+
+{
+  "password_hash": "short"
+}
+
+### Test Case 13: Error - Invalid Username Format
+PATCH http://{{host}}/api/user/{{userId}}
+Content-Type: application/json
+
+{
+  "username": "user name"
+}
+
+### Test Case 14: Error - Invalid First Name Format
+PATCH http://{{host}}/api/user/{{userId}}
+Content-Type: application/json
+
+{
+  "first_name": "First123"
+}
+
+### Test Case 15: Error - Invalid Last Name Format
+PATCH http://{{host}}/api/user/{{userId}}
+Content-Type: application/json
+
+{
+  "last_name": "Last#"
+}
+
+### Test Case 16: Error - Email Already Exists (Unique Constraint Violation)
+# Replace with an email that is *already* in your database, belonging to a *different* user.
+PATCH http://{{host}}/api/user/{{userId}}
+Content-Type: application/json
+
+{
+  "email": "already.exists@example.com"
+}
