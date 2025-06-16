@@ -11,7 +11,9 @@ const login = () => {
   const [email, setEmail] = createSignal("");
   const [password, setPassword] = createSignal("");
   const [confirmPassword, setConfirmPassword] = createSignal("");
-  const [name, setName] = createSignal("");
+  const [username, setUsername] = createSignal("");
+  const [firstName, setFirstName] = createSignal("");
+  const [lastName, setLastName] = createSignal("");
   const [birthDate, setbirthDate] = createSignal("");
   const [loading, setLoading] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
@@ -41,7 +43,12 @@ const login = () => {
     if (
       !email() ||
       !password() ||
-      (view() === "signup" && (!name() || !birthDate() || !confirmPassword()))
+      (view() === "signup" &&
+        (!firstName() ||
+          !lastName() ||
+          !username() ||
+          !birthDate() ||
+          !confirmPassword()))
     ) {
       setError("Please fill in all fields.");
       setLoading(false);
@@ -54,16 +61,48 @@ const login = () => {
       return;
     }
 
+    let formattedBirthDate = birthDate(); // Get the current value from the signal
+
+    // Only attempt to format if birthDate() has a value
+    if (formattedBirthDate) {
+      try {
+        // Create a Date object from the input string.
+        // Using 'T00:00:00' ensures it's interpreted at the start of the day in local time
+        // before converting to UTC.
+        const dateObject = new Date(`${formattedBirthDate}T00:00:00`);
+
+        // Check if the dateObject is valid
+        if (!isNaN(dateObject.getTime())) {
+          formattedBirthDate = dateObject.toISOString();
+        } else {
+          setError("Invalid Birth Date provided.");
+          setLoading(false);
+          return;
+        }
+      } catch (error) {
+        setError("Error formatting Birth Date.");
+        setLoading(false);
+        return;
+      }
+    }
+
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const dateObject = new Date(`${birthDate()}T00:00:00`);
       if (view() === "signup") {
-        console.log("Signing up with:", {
-          name: name(),
-          email: email(),
-          birthDate: birthDate(),
-          password: password(),
+        const response = await fetch("/api/user", {
+          method: "PUT",
+          headers: {
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            email: email(),
+            password_hash: password(),
+            first_name: firstName(),
+            last_name: lastName(),
+            username: username(),
+            date_of_birth: formattedBirthDate,
+          }),
         });
-        alert("Successfully signed up! (Simulated)");
       } else {
         console.log("Logging in with:", {
           email: email(),
@@ -95,13 +134,33 @@ const login = () => {
                 <>
                   <Input
                     mounted={mounted}
-                    context={"Name"}
-                    placeHolder={"John Doe"}
+                    context={"First Name"}
+                    placeHolder={"John"}
                     IconName={TbUser}
-                    value={name}
-                    setValue={setName}
+                    value={firstName}
+                    setValue={setFirstName}
                     type={"text"}
-                    autocomplete={"name"}
+                    autocomplete={"given-name"}
+                  />
+                  <Input
+                    mounted={mounted}
+                    context={"Last Name"}
+                    placeHolder={"Doe"}
+                    IconName={TbUser}
+                    value={lastName}
+                    setValue={setLastName}
+                    type={"text"}
+                    autocomplete={"family-name"}
+                  />
+                  <Input
+                    mounted={mounted}
+                    context={"Username"}
+                    placeHolder={"johndoe"}
+                    IconName={TbUser}
+                    value={username}
+                    setValue={setUsername}
+                    type={"text"}
+                    autocomplete={"username"}
                   />
                   <Input
                     mounted={mounted}
@@ -200,9 +259,9 @@ const login = () => {
 
           <button
             type="submit"
-            class="bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 
-                                     px-6 py-3 rounded-full shadow-md hover:shadow-lg transition-all duration-300 
-                                     font-semibold text-lg w-full hover:scale-105"
+            class="bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700
+                           px-6 py-3 rounded-full shadow-md hover:shadow-lg transition-all duration-300
+                           font-semibold text-lg w-full hover:scale-105"
             disabled={loading()}
           >
             {
