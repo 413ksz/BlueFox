@@ -1,7 +1,13 @@
-package validation
+// Test file for user validation package
+// To run: cd backEnd/pkg/validation && go test -v
+// This file is part of the 'validation_test' package,
+// which is separate from the 'validation' package.
+package validation_test
 
 import (
 	"testing"
+
+	"github.com/413ksz/BlueFox/backEnd/pkg/validation"
 )
 
 // TestValidateUsername tests the ValidateUsername function.
@@ -104,12 +110,12 @@ func TestValidateUsername(t *testing.T) {
 		{
 			name:     "Invalid: Contains multiple hyphens",
 			username: "user--name",
-			want:     true, // Current pattern allows this: `^[a-zA-Z0-9](?:[a-zA-Z0-9_-]{1,18}[a-zA-Z0-9])?$`
+			want:     true,
 		},
 		{
 			name:     "Invalid: Contains multiple underscores",
 			username: "user__name",
-			want:     true, // Current pattern allows this
+			want:     true,
 		},
 		{
 			name:     "Invalid: Starts with number and has special char in middle",
@@ -133,9 +139,10 @@ func TestValidateUsername(t *testing.T) {
 		},
 	}
 
+	// Run the tests
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := ValidateUsername(tt.username); got != tt.want {
+			if got := validation.ValidateUsername(tt.username); got != tt.want { // Call from the imported package
 				t.Errorf("ValidateUsername(%q) = %v, want %v", tt.username, got, tt.want)
 			}
 		})
@@ -251,9 +258,10 @@ func TestValidateEmail(t *testing.T) {
 		},
 	}
 
+	// Run the tests
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := ValidateEmail(tt.email); got != tt.want {
+			if got := validation.ValidateEmail(tt.email); got != tt.want {
 				t.Errorf("ValidateEmail(%q) = %v, want %v", tt.email, got, tt.want)
 			}
 		})
@@ -369,9 +377,10 @@ func TestValidatePassword(t *testing.T) {
 		},
 	}
 
+	// Run the tests
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := ValidatePassword(tt.password); got != tt.want {
+			if got := validation.ValidatePassword(tt.password); got != tt.want {
 				t.Errorf("ValidatePassword(%q) = %v, want %v", tt.password, got, tt.want)
 			}
 		})
@@ -486,9 +495,9 @@ func TestValidateName(t *testing.T) {
 			want: false,
 		},
 		{
-			name: "Invalid: Name with multiple internal spaces",
+			name: "Valid: Name with multiple internal spaces",
 			val:  "Ann   Marie",
-			want: true, // Current pattern allows this: `^[a-zA-Z][a-zA-Z' -]{1,18}[a-zA-Z]$`
+			want: true,
 		},
 		{
 			name: "Invalid: Name with numbers",
@@ -507,9 +516,10 @@ func TestValidateName(t *testing.T) {
 		},
 	}
 
+	// Run the tests
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := ValidateName(tt.val); got != tt.want {
+			if got := validation.ValidateName(tt.val); got != tt.want {
 				t.Errorf("ValidateName(%q) = %v, want %v", tt.val, got, tt.want)
 			}
 		})
