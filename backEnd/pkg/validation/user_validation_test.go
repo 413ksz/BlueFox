@@ -1,5 +1,5 @@
-// Test file for user validation package
-// To run: cd backEnd/pkg/validation && go test -v
+// Test file for user validation package.
+// To run: cd backEnd/pkg/validation && go test -v.
 // This file is part of the 'validation_test' package,
 // which is separate from the 'validation' package.
 package validation_test
@@ -12,6 +12,9 @@ import (
 
 // TestValidateUsername tests the ValidateUsername function.
 func TestValidateUsername(t *testing.T) {
+	// Define test cases.
+	// Each test case contains a name, username string, and expected result.
+	// The expected result is true if the username is valid, false otherwise.
 	tests := []struct {
 		name     string
 		username string
@@ -151,6 +154,9 @@ func TestValidateUsername(t *testing.T) {
 
 // TestValidateEmail tests the ValidateEmail function.
 func TestValidateEmail(t *testing.T) {
+	// Define test cases.
+	// Each test case contains a name, an email address, and the expected result.
+	// The expected result is true if the email address is valid, false otherwise.
 	tests := []struct {
 		name  string
 		email string
@@ -270,6 +276,9 @@ func TestValidateEmail(t *testing.T) {
 
 // TestValidatePassword tests the ValidatePassword function against all criteria.
 func TestValidatePassword(t *testing.T) {
+	// Define test cases
+	// Each test case contains a name, a password, and the expected result
+	// The expected result is true if the password is valid, false otherwise
 	tests := []struct {
 		name     string
 		password string
@@ -389,6 +398,9 @@ func TestValidatePassword(t *testing.T) {
 
 // TestValidateName tests the ValidateName function.
 func TestValidateName(t *testing.T) {
+	// Define test cases
+	// Each test case contains a name, a value, and the expected result
+	// The expected result is true if the value is valid, false otherwise
 	tests := []struct {
 		name string
 		val  string
