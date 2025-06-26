@@ -147,12 +147,12 @@ func UserCreateHandler(w http.ResponseWriter, r *http.Request) {
 		log.Warn().
 			Str("component", COMPONENT).
 			Str("method_name", METHOD_NAME).
-			Str("event", "validation_failed_invalid_lastname").
+			Str("event", "validation_failed_invalid_firstname").
 			Str("api_error_code", apiResponse.Error.Code).
 			Str("api_error_message", apiResponse.Error.Message).
 			Int("api_error_status", apiResponse.Error.HTTPStatusCode).
-			Str("lastName", newUser.LastName).
-			Msg("Validation error: invalid last name format.")
+			Str("firstName", newUser.FirstName).
+			Msg("Validation error: invalid first name format.")
 		models.SendApiResponse(w, apiResponse)
 		return
 	}
@@ -162,11 +162,11 @@ func UserCreateHandler(w http.ResponseWriter, r *http.Request) {
 		log.Warn().
 			Str("component", COMPONENT).
 			Str("method_name", METHOD_NAME).
-			Str("event", "validation_failed_invalid_firstname").
+			Str("event", "validation_failed_invalid_lastname").
 			Str("api_error_code", apiResponse.Error.Code).
 			Str("api_error_message", apiResponse.Error.Message).
 			Int("api_error_status", apiResponse.Error.HTTPStatusCode).
-			Str("firstName", newUser.FirstName).
+			Str("lastName", newUser.LastName).
 			Msg("Validation error: invalid last name format.")
 		models.SendApiResponse(w, apiResponse)
 		return
