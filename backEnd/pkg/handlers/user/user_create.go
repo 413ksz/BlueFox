@@ -35,7 +35,7 @@ func UserCreateHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info().
 		Str("component", COMPONENT).
 		Str("method_name", METHOD_NAME).
-		Str("http_method", r.Method).
+		Str("http_method", METHOD).
 		Str("path", r.URL.Path).
 		Str("event", "http_request_received").
 		Msg("Processing new user creation request.")
