@@ -17,7 +17,7 @@ import (
 func UserLoginHandler(w http.ResponseWriter, r *http.Request) {
 	const (
 		COMPONENT      string = "user_handler"
-		METHOD_NAME    string = "UserGetHandler"
+		METHOD_NAME    string = "UserLoginHandler"
 		CONTEXT        string = "api/user/login"
 		METHOD         string = "POST"
 		STATUS_DEFAULT int    = http.StatusOK
@@ -179,6 +179,13 @@ func UserLoginHandler(w http.ResponseWriter, r *http.Request) {
 			Msg("Error generating JWT token")
 		models.SendApiResponse(w, apiResponse)
 	}
+
+	log.Info().
+		Str("component", COMPONENT).
+		Str("method_name", METHOD_NAME).
+		Str("event", "user_login_success").
+		Msg("User logged in successfully")
+
 	w.Header().Set("Authorization", "Bearer: "+token)
 	models.SendApiResponse(w, apiResponse)
 
