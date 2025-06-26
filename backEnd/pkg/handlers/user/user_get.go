@@ -36,7 +36,7 @@ func UserGetHandler(w http.ResponseWriter, r *http.Request) {
 		Str("component", COMPONENT).
 		Str("method_name", METHOD_NAME).
 		Str("http_method", METHOD).
-		Str("path", r.URL.Path).
+		Str("path", CONTEXT).
 		Str("event", "http_request_received").
 		Msg("Processing user retrieval request.")
 

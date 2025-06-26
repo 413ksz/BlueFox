@@ -2,7 +2,6 @@ package user
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"github.com/413ksz/BlueFox/backEnd/pkg/apierrors"
@@ -11,11 +10,14 @@ import (
 	passwordHashing "github.com/413ksz/BlueFox/backEnd/pkg/password_hashing"
 	jwt_token "github.com/413ksz/BlueFox/backEnd/pkg/token"
 	"github.com/413ksz/BlueFox/backEnd/pkg/validation"
+	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
 
 func UserLoginHandler(w http.ResponseWriter, r *http.Request) {
 	const (
+		COMPONENT      string = "user_handler"
+		METHOD_NAME    string = "UserGetHandler"
 		CONTEXT        string = "api/user/login"
 		METHOD         string = "POST"
 		STATUS_DEFAULT int    = http.StatusOK
@@ -27,9 +29,24 @@ func UserLoginHandler(w http.ResponseWriter, r *http.Request) {
 	apiResponse.Context = CONTEXT
 	apiResponse.StatusCode = STATUS_DEFAULT
 
+	log.Info().
+		Str("component", "user_handler").
+		Str("method_name", "UserLoginHandler").
+		Str("http_method", METHOD).
+		Str("path", CONTEXT).
+		Str("event", "http_request_received").
+		Msg("Processing user login request.")
+
 	if db == nil {
 		apiResponse.Error = apierrors.ERROR_CODE_DATABASE_INITIALIZE.ApiErrorResponse("Database not ready for UserUpdateHandler", nil)
-		log.Printf("ERROR: [%s][%s] Database not initialized. Error: %s", apiResponse.Context, apiResponse.Method, apiResponse.Error.Details)
+		log.Error().
+			Str("component", COMPONENT).
+			Str("method_name", METHOD_NAME).
+			Str("event", "db_not_initialized").
+			Str("api_error_code", apiResponse.Error.Code).
+			Str("api_error_message", apiResponse.Error.Message).
+			Int("api_error_status", apiResponse.Error.HTTPStatusCode).
+			Msg("Database not initialized for loging in the user.")
 		models.SendApiResponse(w, apiResponse)
 		return
 	}
@@ -39,7 +56,15 @@ func UserLoginHandler(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		apiResponse.Error = apierrors.ERROR_CODE_ENCODE_ERROR.ApiErrorResponse("Invalid request body", err)
-		log.Printf("ERROR: [%s][%s] Invalid request body. Error: %s", apiResponse.Context, apiResponse.Method, apiResponse.Error.Details)
+		log.Warn().
+			Str("component", COMPONENT).
+			Str("method_name", METHOD_NAME).
+			Str("event", "request_body_decode_failed").
+			Str("api_error_code", apiResponse.Error.Code).
+			Str("api_error_message", apiResponse.Error.Message).
+			Int("api_error_status", apiResponse.Error.HTTPStatusCode).
+			Err(err).
+			Msg("Error decoding request body.")
 		models.SendApiResponse(w, apiResponse)
 		return
 	}
@@ -47,7 +72,15 @@ func UserLoginHandler(w http.ResponseWriter, r *http.Request) {
 	// Check if the required fields are present in the request body.
 	if user.Email == "" || user.Password == "" {
 		apiResponse.Error = apierrors.ERROR_CODE_INVALID_INPUT.ApiErrorResponse("Invalid request body", nil)
-		log.Printf("ERROR: [%s][%s] Invalid request body. Error: %s", apiResponse.Context, apiResponse.Method, apiResponse.Error.Details)
+		log.Warn().
+			Str("component", COMPONENT).
+			Str("method_name", METHOD_NAME).
+			Str("event", "validation_failed_missing_fields").
+			Str("api_error_code", apiResponse.Error.Code).
+			Str("api_error_message", apiResponse.Error.Message).
+			Int("api_error_status", apiResponse.Error.HTTPStatusCode).
+			Fields(apiResponse.Params).
+			Msg("Validation error: required fields are missing.")
 		models.SendApiResponse(w, apiResponse)
 		return
 	}
@@ -55,7 +88,15 @@ func UserLoginHandler(w http.ResponseWriter, r *http.Request) {
 	// Validate email format
 	if !validation.ValidateEmail(user.Email) {
 		apiResponse.Error = apierrors.ERROR_CODE_VALIDATION_FAILED.ApiErrorResponse("Invalid request body", nil)
-		log.Printf("ERROR: [%s][%s] Invalid request body. Error: %s", apiResponse.Context, apiResponse.Method, apiResponse.Error.Details)
+		log.Warn().
+			Str("component", COMPONENT).
+			Str("method_name", METHOD_NAME).
+			Str("event", "validation_failed_invalid_email").
+			Str("api_error_code", apiResponse.Error.Code).
+			Str("api_error_message", apiResponse.Error.Message).
+			Int("api_error_status", apiResponse.Error.HTTPStatusCode).
+			Str("email", user.Email).
+			Msg("Validation error: invalid email format.")
 		models.SendApiResponse(w, apiResponse)
 		return
 	}
@@ -63,7 +104,14 @@ func UserLoginHandler(w http.ResponseWriter, r *http.Request) {
 	// Validate email format
 	if !validation.ValidatePassword(user.Password) {
 		apiResponse.Error = apierrors.ERROR_CODE_VALIDATION_FAILED.ApiErrorResponse("Invalid request body", nil)
-		log.Printf("ERROR: [%s][%s] Invalid request body. Error: %s", apiResponse.Context, apiResponse.Method, apiResponse.Error.Details)
+		log.Warn().
+			Str("component", COMPONENT).
+			Str("method_name", METHOD_NAME).
+			Str("event", "validation_failed_invalid_password").
+			Str("api_error_code", apiResponse.Error.Code).
+			Str("api_error_message", apiResponse.Error.Message).
+			Int("api_error_status", apiResponse.Error.HTTPStatusCode).
+			Msg("Validation error: invalid password format.")
 		models.SendApiResponse(w, apiResponse)
 		return
 	}
@@ -74,19 +122,45 @@ func UserLoginHandler(w http.ResponseWriter, r *http.Request) {
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			apiResponse.Error = apierrors.ERROR_CODE_NOT_FOUND.ApiErrorResponse("User not found", nil)
-			log.Printf("INFO: [%s][%s] User not found for ID: %s", apiResponse.Context, apiResponse.Method, user.Email)
+			log.Error().
+				Str("component", COMPONENT).
+				Str("method_name", METHOD_NAME).
+				Str("event", "user_not_found").
+				Str("api_error_code", apiResponse.Error.Code).
+				Str("api_error_message", apiResponse.Error.Message).
+				Int("api_error_status", apiResponse.Error.HTTPStatusCode).
+				Str("id", user.ID.String()).
+				Err(result.Error).
+				Msg("User not found")
 			models.SendApiResponse(w, apiResponse)
 			return
 		}
 		// Other database errors are internal server errors
-		apiResponse.Error = apierrors.ERROR_CODE_DATABASE_ERROR.ApiErrorResponse("Error fetching user for update", nil)
-		log.Printf("ERROR: [%s][%s] Database error fetching user ID %s: %v", apiResponse.Context, apiResponse.Method, user.Email, result.Error)
+		apiResponse.Error = apierrors.ERROR_CODE_DATABASE_ERROR.ApiErrorResponse("Error fetching user data for login", nil)
+		log.Error().
+			Str("component", COMPONENT).
+			Str("method_name", METHOD_NAME).
+			Str("event", "database_error").
+			Str("api_error_code", apiResponse.Error.Code).
+			Str("api_error_message", apiResponse.Error.Message).
+			Int("api_error_status", apiResponse.Error.HTTPStatusCode).
+			Err(result.Error).
+			Msg("Error fetching user")
 		models.SendApiResponse(w, apiResponse)
 		return
 	}
 	if !passwordHashing.VerifyPassword(user.Password, fetchedUser.Password) {
 		apiResponse.Error = apierrors.ERROR_CODE_UNAUTHORIZED.ApiErrorResponse("Invalid credentials", nil)
-		log.Printf("ERROR: [%s][%s] Invalid credentials for user ID %s", apiResponse.Context, apiResponse.Method, user.Email)
+		log.Error().
+			Str("component", COMPONENT).
+			Str("method_name", METHOD_NAME).
+			Str("event", "invalid_password").
+			Str("api_error_code", apiResponse.Error.Code).
+			Str("api_error_message", apiResponse.Error.Message).
+			Int("api_error_status", apiResponse.Error.HTTPStatusCode).
+			Str("password1", fetchedUser.Password).
+			Str("password2", user.Password).
+			Msg("Invalid password")
 		models.SendApiResponse(w, apiResponse)
 		return
 	}
@@ -96,7 +170,15 @@ func UserLoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		apiResponse.Error = apierrors.ERROR_CODE_DATABASE_ERROR.ApiErrorResponse("Error generating JWT token", nil)
-		log.Printf("ERROR: [%s][%s] Error generating JWT token for user ID %s: %v", apiResponse.Context, apiResponse.Method, user.Email, result.Error)
+		log.Error().
+			Str("component", COMPONENT).
+			Str("method_name", METHOD_NAME).
+			Str("event", "jwt_token_error").
+			Str("api_error_code", apiResponse.Error.Code).
+			Str("api_error_message", apiResponse.Error.Message).
+			Int("api_error_status", apiResponse.Error.HTTPStatusCode).
+			Err(err).
+			Msg("Error generating JWT token")
 		models.SendApiResponse(w, apiResponse)
 	}
 	w.Header().Set("Authorization", "Bearer: "+token)
