@@ -30,15 +30,15 @@ func UserLoginHandler(w http.ResponseWriter, r *http.Request) {
 	apiResponse.StatusCode = STATUS_DEFAULT
 
 	log.Info().
-		Str("component", "user_handler").
-		Str("method_name", "UserLoginHandler").
+		Str("component", COMPONENT).
+		Str("method_name", METHOD_NAME).
 		Str("http_method", METHOD).
 		Str("path", CONTEXT).
 		Str("event", "http_request_received").
 		Msg("Processing user login request.")
 
 	if db == nil {
-		apiResponse.Error = apierrors.ERROR_CODE_DATABASE_INITIALIZE.ApiErrorResponse("Database not ready for UserUpdateHandler", nil)
+		apiResponse.Error = apierrors.ERROR_CODE_DATABASE_INITIALIZE.ApiErrorResponse("Database not ready for UserLoginHandler", nil)
 		log.Error().
 			Str("component", COMPONENT).
 			Str("method_name", METHOD_NAME).
@@ -158,8 +158,6 @@ func UserLoginHandler(w http.ResponseWriter, r *http.Request) {
 			Str("api_error_code", apiResponse.Error.Code).
 			Str("api_error_message", apiResponse.Error.Message).
 			Int("api_error_status", apiResponse.Error.HTTPStatusCode).
-			Str("password1", fetchedUser.Password).
-			Str("password2", user.Password).
 			Msg("Invalid password")
 		models.SendApiResponse(w, apiResponse)
 		return
