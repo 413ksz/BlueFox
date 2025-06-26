@@ -256,6 +256,7 @@ func UserCreateHandler(w http.ResponseWriter, r *http.Request) {
 		Str("component", COMPONENT).
 		Str("method_name", METHOD_NAME).
 		Str("event", "user_created_success").
+		Str("user_id", newUser.ID.String()).
 		Msg("Successfully created user.")
 
 	models.SendApiResponse(w, apiResponse)

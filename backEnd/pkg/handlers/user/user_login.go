@@ -184,6 +184,7 @@ func UserLoginHandler(w http.ResponseWriter, r *http.Request) {
 		Str("component", COMPONENT).
 		Str("method_name", METHOD_NAME).
 		Str("event", "user_login_success").
+		Str("user_id", fetchedUser.ID.String()).
 		Msg("User logged in successfully")
 
 	w.Header().Set("Authorization", "Bearer: "+token)

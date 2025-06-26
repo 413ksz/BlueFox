@@ -128,6 +128,7 @@ func UserGetHandler(w http.ResponseWriter, r *http.Request) {
 		Str("component", COMPONENT).
 		Str("method_name", METHOD_NAME).
 		Str("event", "user_fetched").
+		Str("user_id", userID).
 		Msg("User fetched successfully")
 
 	models.SendApiResponse(w, apiResponse)

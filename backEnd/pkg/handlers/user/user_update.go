@@ -26,7 +26,7 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	const (
 		COMPONENT      string = "user_handler"
 		METHOD_NAME    string = "UserUpdateHandler"
-		CONTEXT        string = "api/user/"
+		CONTEXT        string = "api/user/{id}"
 		METHOD         string = "PATCH"
 		STATUS_DEFAULT int    = http.StatusOK
 	)
@@ -346,7 +346,7 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request) {
 			Str("api_error_code", apiResponse.Error.Code).
 			Str("api_error_message", apiResponse.Error.Message).
 			Err(result.Error).
-			Msg("Database error creating user.")
+			Msg("Database error updating user.")
 		models.SendApiResponse(w, apiResponse)
 		return
 	}
