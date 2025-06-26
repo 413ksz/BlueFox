@@ -1,13 +1,13 @@
 package user
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/413ksz/BlueFox/backEnd/pkg/apierrors"
 	"github.com/413ksz/BlueFox/backEnd/pkg/database"
 	"github.com/413ksz/BlueFox/backEnd/pkg/models"
 	"github.com/gorilla/mux"
+	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
 
@@ -18,6 +18,8 @@ func UserGetHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Define the context and method for the API response.
 	const (
+		COMPONENT      string = "user_handler"
+		METHOD_NAME    string = "UserGetHandler"
 		CONTEXT        string = "api/user/"
 		METHOD         string = "GET"
 		STATUS_DEFAULT int    = http.StatusOK
@@ -30,10 +32,25 @@ func UserGetHandler(w http.ResponseWriter, r *http.Request) {
 	// Get the GORM database instance.
 	db := database.DB
 
+	log.Info().
+		Str("component", COMPONENT).
+		Str("method_name", METHOD_NAME).
+		Str("http_method", METHOD).
+		Str("path", CONTEXT).
+		Str("event", "http_request_received").
+		Msg("Processing user retrieval request.")
+
 	// Check if the database connection is initialized.
 	if db == nil {
 		apiResponse.Error = apierrors.ERROR_CODE_DATABASE_INITIALIZE.ApiErrorResponse("Database not ready for UserGetHandler", nil)
-		log.Printf("ERROR: [%s][%s] Database not initialized. Error: %s", apiResponse.Context, apiResponse.Method, apiResponse.Error.Details)
+		log.Error().
+			Str("component", COMPONENT).
+			Str("method_name", METHOD_NAME).
+			Str("event", "db_not_initialized").
+			Str("api_error_code", apiResponse.Error.Code).
+			Str("api_error_message", apiResponse.Error.Message).
+			Int("api_error_status", apiResponse.Error.HTTPStatusCode).
+			Msg("Database not initialized for getting user data")
 		models.SendApiResponse(w, apiResponse)
 		return
 	}
@@ -51,7 +68,14 @@ func UserGetHandler(w http.ResponseWriter, r *http.Request) {
 		// This should ideally not happen if the route is defined correctly with {id},
 		// but it's a good defensive check.
 		apiResponse.Error = apierrors.ERROR_CODE_INVALID_INPUT.ApiErrorResponse("User ID missing from path", nil)
-		log.Printf("WARN: [%s][%s] Invalid input: User ID missing from path. Params: %+v", apiResponse.Context, apiResponse.Method, apiResponse.Params)
+		log.Error().
+			Str("component", COMPONENT).
+			Str("method_name", METHOD_NAME).
+			Str("event", "invalid_id").
+			Str("api_error_code", apiResponse.Error.Code).
+			Str("api_error_message", apiResponse.Error.Message).
+			Int("api_error_status", apiResponse.Error.HTTPStatusCode).
+			Msg("User ID missing from path")
 		models.SendApiResponse(w, apiResponse)
 		return
 	}
@@ -67,13 +91,30 @@ func UserGetHandler(w http.ResponseWriter, r *http.Request) {
 		// If gorm.ErrRecordNotFound is returned, it means no user with that ID was found.
 		if result.Error == gorm.ErrRecordNotFound {
 			apiResponse.Error = apierrors.ERROR_CODE_DATABASE_ERROR.ApiErrorResponse("User not found", nil)
+			log.Error().
+				Str("component", COMPONENT).
+				Str("method_name", METHOD_NAME).
+				Str("event", "user_not_found").
+				Str("api_error_code", apiResponse.Error.Code).
+				Str("api_error_message", apiResponse.Error.Message).
+				Int("api_error_status", apiResponse.Error.HTTPStatusCode).
+				Str("id", userID).
+				Err(result.Error).
+				Msg("User not found")
 			models.SendApiResponse(w, apiResponse)
-			log.Printf("INFO: [%s][%s] User not found for ID: %s", apiResponse.Context, apiResponse.Method, userID)
 			return
 		}
 		// If there's any other error, log it and return an internal server error.
 		apiResponse.Error = apierrors.ERROR_CODE_DATABASE_ERROR.ApiErrorResponse("Error fetching user", nil)
-		log.Printf("ERROR: [%s][%s] Database error fetching user ID %s: %v", apiResponse.Context, apiResponse.Method, userID, result.Error)
+		log.Error().
+			Str("component", COMPONENT).
+			Str("method_name", METHOD_NAME).
+			Str("event", "database_error").
+			Str("api_error_code", apiResponse.Error.Code).
+			Str("api_error_message", apiResponse.Error.Message).
+			Int("api_error_status", apiResponse.Error.HTTPStatusCode).
+			Err(result.Error).
+			Msg("Error fetching user")
 		models.SendApiResponse(w, apiResponse)
 		return
 	}
@@ -82,6 +123,13 @@ func UserGetHandler(w http.ResponseWriter, r *http.Request) {
 	apiResponse.Data = &models.ResponseData[models.User]{
 		Items: []models.User{user},
 	}
-	log.Printf("INFO: [%s][%s] Successfully fetched user ID: %s", apiResponse.Context, apiResponse.Method, userID)
+
+	log.Info().
+		Str("component", COMPONENT).
+		Str("method_name", METHOD_NAME).
+		Str("event", "user_fetched").
+		Str("user_id", userID).
+		Msg("User fetched successfully")
+
 	models.SendApiResponse(w, apiResponse)
 }

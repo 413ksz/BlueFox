@@ -2,11 +2,11 @@ package database
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"time"
 
 	"github.com/413ksz/BlueFox/backEnd/pkg/models"
+	"github.com/rs/zerolog/log"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -29,11 +29,21 @@ var DB *gorm.DB
 // Returns:
 //
 //	error: An error if the "DATABASE_URL" environment variable is not set,
-//	       or if the connection to the database fails.
+//	 	or if the connection to the database fails.
 func InitAppDB() error {
-	// Retrieve the database URL from environment variables. This is crucial for deployment.
+	// --- Database Configuration ---
+	log.Info().
+		Str("component", "database").
+		Str("event", "app_db_init_start").
+		Msg("Initializing global database connection")
+
+	// Retrieve the database URL from environment variables.
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
+		log.Error().
+			Str("component", "database").
+			Str("event", "app_db_env_var_missing").
+			Msg("DATABASE_URL environment variable is not set")
 		return fmt.Errorf("DATABASE_URL environment variable is not set")
 	}
 
@@ -41,12 +51,22 @@ func InitAppDB() error {
 	// Open a new GORM database connection using the PostgreSQL driver.
 	DB, err = gorm.Open(postgres.Open(dbURL), &gorm.Config{})
 	if err != nil {
+		log.Error().
+			Err(err).
+			Str("component", "database").
+			Str("event", "app_db_connect_failure").
+			Msg("Failed to connect to database")
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 
 	// Get the underlying sql.DB object to configure connection pooling.
 	sqlDB, err := DB.DB()
 	if err != nil {
+		log.Error().
+			Err(err).
+			Str("component", "database").
+			Str("event", "app_db_get_sql_db_failure").
+			Msg("Failed to get underlying SQL DB for app")
 		return fmt.Errorf("failed to get underlying SQL DB for app: %w", err)
 	}
 
@@ -55,7 +75,13 @@ func InitAppDB() error {
 	sqlDB.SetMaxOpenConns(20)
 	sqlDB.SetConnMaxLifetime(1 * time.Minute)
 
-	log.Println("Global application database connection established and pooled.")
+	log.Info().
+		Str("component", "database").
+		Str("event", "app_db_init_success").
+		Int("max_idle_conns", 5).
+		Int("max_open_conns", 20).
+		Str("conn_max_lifetime", "1m").
+		Msg("Global application database connection established and pooled.")
 	return nil
 }
 
@@ -76,18 +102,38 @@ func InitAppDB() error {
 //
 //	*gorm.DB: A pointer to the GORM database connection instance configured for migration.
 //	error: An error if the connection fails, the underlying SQL DB cannot be retrieved,
-//	       or if the database is unreachable via a ping.
+//	 	or if the database is unreachable via a ping.
 func ConnectMigrateDB(dbURL string) (*gorm.DB, error) {
+	log.Info().
+		Str("component", "database").
+		Str("event", "migration_db_connect_attempt").
+		Msg("Attempting to connect to database for migration")
+
 	db, err := gorm.Open(postgres.Open(dbURL), &gorm.Config{})
 	if err != nil {
+		log.Error().
+			Err(err).
+			Str("component", "database").
+			Str("event", "migration_db_connect_failure").
+			Msg("Failed to connect to database for migration")
 		return nil, fmt.Errorf("failed to connect to database for migration: %w", err)
 	}
 
 	sqlDB, err := db.DB()
 	if err != nil {
+		log.Error().
+			Err(err).
+			Str("component", "database").
+			Str("event", "migration_db_get_sql_db_failure").
+			Msg("Failed to get underlying SQL DB for migration")
 		return nil, fmt.Errorf("failed to get underlying SQL DB for migration: %w", err)
 	}
 	if err := sqlDB.Ping(); err != nil {
+		log.Error().
+			Err(err).
+			Str("component", "database").
+			Str("event", "migration_db_ping_failure").
+			Msg("Failed to ping database for migration")
 		return nil, fmt.Errorf("failed to ping database for migration: %w", err)
 	}
 
@@ -95,7 +141,13 @@ func ConnectMigrateDB(dbURL string) (*gorm.DB, error) {
 	sqlDB.SetMaxOpenConns(20)
 	sqlDB.SetConnMaxLifetime(1 * time.Hour)
 
-	log.Println("Migration database connection established")
+	log.Info().
+		Str("component", "database").
+		Str("event", "migration_db_connect_success").
+		Int("max_idle_conns", 5).
+		Int("max_open_conns", 20).
+		Str("conn_max_lifetime", "1h").
+		Msg("Migration database connection established.")
 	return db, nil
 }
 
@@ -125,10 +177,18 @@ func ConnectMigrateDB(dbURL string) (*gorm.DB, error) {
 //
 //	db: The GORM database instance on which to run the migrations.
 //	isFullMigration: A boolean flag. If true, all specified tables will be
-//	                 dropped before migration. Use only for development.
+//	 	dropped before migration. Use only for development.
 func Migrate(db *gorm.DB, isFullMigration bool) {
-	log.Println("Starting database auto-migration...")
+	log.Info().
+		Str("component", "database").
+		Str("event", "migration_start").
+		Bool("is_full_migration", isFullMigration).
+		Msg("Starting database auto-migration...")
 	if isFullMigration {
+		log.Warn().
+			Str("component", "database").
+			Str("event", "migration_full_data_loss_warning").
+			Msg("Performing full migration: Dropping all specified tables. DATA LOSS WILL OCCUR!")
 		db.Migrator().DropTable(
 			&models.User{},
 			&models.Message{},
@@ -140,6 +200,10 @@ func Migrate(db *gorm.DB, isFullMigration bool) {
 			&models.MessageAttachment{},
 			// Add any new top-level models here.
 		)
+		log.Info().
+			Str("component", "database").
+			Str("event", "migration_tables_dropped").
+			Msg("All specified tables dropped for full migration.")
 	}
 	err := db.AutoMigrate(
 		&models.User{},
@@ -153,7 +217,14 @@ func Migrate(db *gorm.DB, isFullMigration bool) {
 		// Add any new top-level models here.
 	)
 	if err != nil {
-		log.Fatalf("Failed to auto-migrate database: %v", err)
+		log.Fatal().
+			Err(err).
+			Str("component", "database").
+			Str("event", "migration_auto_migrate_failure").
+			Msg("Failed to auto-migrate database")
 	}
-	log.Println("Database auto-migration completed successfully!")
+	log.Info().
+		Str("component", "database").
+		Str("event", "migration_complete").
+		Msg("Database auto-migration completed successfully!")
 }
