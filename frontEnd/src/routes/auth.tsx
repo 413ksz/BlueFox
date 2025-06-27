@@ -83,7 +83,7 @@ const login = () => {
     try {
       const dateObject = new Date(`${birthDate()}T00:00:00`);
       if (view() === "signup") {
-        const response = await fetch("http://localhost:9000/api/user", {
+        const response = await fetch("/api/user", {
           method: "PUT",
           headers: {
             Accept: "application/json",
