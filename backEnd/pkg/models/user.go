@@ -13,8 +13,8 @@ type User struct {
 	Username    string     `json:"username" gorm:"not null;Index"`
 	Email       string     `json:"email" gorm:"not null;unique"`
 	Password    string     `json:"password_hash" gorm:"not null"`
-	FirstName   string     `json:"first_name" gorm:"not null"`
-	LastName    string     `json:"last_name" gorm:"not null"`
+	FirstName   *string    `json:"first_name" gorm:"not null"`
+	LastName    *string    `json:"last_name" gorm:"not null"`
 	CreatedAt   time.Time  `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt   *time.Time `json:"updated_at" gorm:"autoUpdateTime"`
 	LastOnline  *time.Time `json:"last_online"`
