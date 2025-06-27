@@ -12,8 +12,6 @@ const login = () => {
   const [password, setPassword] = createSignal("");
   const [confirmPassword, setConfirmPassword] = createSignal("");
   const [username, setUsername] = createSignal("");
-  const [firstName, setFirstName] = createSignal("");
-  const [lastName, setLastName] = createSignal("");
   const [birthDate, setbirthDate] = createSignal("");
   const [loading, setLoading] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
@@ -44,11 +42,7 @@ const login = () => {
       !email() ||
       !password() ||
       (view() === "signup" &&
-        (!firstName() ||
-          !lastName() ||
-          !username() ||
-          !birthDate() ||
-          !confirmPassword()))
+        (!username() || !birthDate() || !confirmPassword()))
     ) {
       setError("Please fill in all fields.");
       setLoading(false);
@@ -97,8 +91,6 @@ const login = () => {
           body: JSON.stringify({
             email: email(),
             password_hash: password(),
-            first_name: firstName(),
-            last_name: lastName(),
             username: username(),
             date_of_birth: formattedBirthDate,
           }),
@@ -132,26 +124,6 @@ const login = () => {
             <Switch>
               <Match when={view() === "signup"}>
                 <>
-                  <Input
-                    mounted={mounted}
-                    context={"First Name"}
-                    placeHolder={"John"}
-                    IconName={TbUser}
-                    value={firstName}
-                    setValue={setFirstName}
-                    type={"text"}
-                    autocomplete={"given-name"}
-                  />
-                  <Input
-                    mounted={mounted}
-                    context={"Last Name"}
-                    placeHolder={"Doe"}
-                    IconName={TbUser}
-                    value={lastName}
-                    setValue={setLastName}
-                    type={"text"}
-                    autocomplete={"family-name"}
-                  />
                   <Input
                     mounted={mounted}
                     context={"Username"}

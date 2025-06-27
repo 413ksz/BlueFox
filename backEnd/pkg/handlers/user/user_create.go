@@ -83,7 +83,7 @@ func UserCreateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Perform validation checks on the user data.
-	if newUser.Email == "" || newUser.Username == "" || newUser.Password == "" || newUser.FirstName == "" || newUser.LastName == "" || newUser.DateOfBirth.IsZero() {
+	if newUser.Email == "" || newUser.Username == "" || newUser.Password == "" || newUser.DateOfBirth.IsZero() {
 		apiResponse.Error = apierrors.ERROR_CODE_INVALID_INPUT.ApiErrorResponse("Missing required fields", nil)
 		log.Warn().
 			Str("component", COMPONENT).
@@ -138,36 +138,6 @@ func UserCreateHandler(w http.ResponseWriter, r *http.Request) {
 			Int("api_error_status", apiResponse.Error.HTTPStatusCode).
 			Str("username", newUser.Username).
 			Msg("Validation error: invalid username format.")
-		models.SendApiResponse(w, apiResponse)
-		return
-	}
-
-	if !validation.ValidateName(newUser.FirstName) {
-		apiResponse.Error = apierrors.ERROR_CODE_VALIDATION_FAILED.ApiErrorResponse("Invalid first name format", nil)
-		log.Warn().
-			Str("component", COMPONENT).
-			Str("method_name", METHOD_NAME).
-			Str("event", "validation_failed_invalid_firstname").
-			Str("api_error_code", apiResponse.Error.Code).
-			Str("api_error_message", apiResponse.Error.Message).
-			Int("api_error_status", apiResponse.Error.HTTPStatusCode).
-			Str("firstName", newUser.FirstName).
-			Msg("Validation error: invalid first name format.")
-		models.SendApiResponse(w, apiResponse)
-		return
-	}
-
-	if !validation.ValidateName(newUser.LastName) {
-		apiResponse.Error = apierrors.ERROR_CODE_VALIDATION_FAILED.ApiErrorResponse("Invalid last name format", nil)
-		log.Warn().
-			Str("component", COMPONENT).
-			Str("method_name", METHOD_NAME).
-			Str("event", "validation_failed_invalid_lastname").
-			Str("api_error_code", apiResponse.Error.Code).
-			Str("api_error_message", apiResponse.Error.Message).
-			Int("api_error_status", apiResponse.Error.HTTPStatusCode).
-			Str("lastName", newUser.LastName).
-			Msg("Validation error: invalid last name format.")
 		models.SendApiResponse(w, apiResponse)
 		return
 	}

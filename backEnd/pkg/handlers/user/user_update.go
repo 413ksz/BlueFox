@@ -152,10 +152,10 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	if updates.Email != "" {
 		updateParams["email"] = updates.Email
 	}
-	if updates.FirstName != "" {
+	if updates.FirstName != nil {
 		updateParams["first_name"] = updates.FirstName
 	}
-	if updates.LastName != "" {
+	if updates.LastName != nil {
 		updateParams["last_name"] = updates.LastName
 	}
 	if !updates.DateOfBirth.IsZero() { // Check if date of birth is not its zero value
@@ -271,7 +271,7 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request) {
 				Str("api_error_code", apiResponse.Error.Code).
 				Str("api_error_message", apiResponse.Error.Message).
 				Int("api_error_status", apiResponse.Error.HTTPStatusCode).
-				Str("firstName", updates.FirstName).
+				Str("firstName", *updates.FirstName).
 				Msg("Validation error: invalid first name format.")
 			models.SendApiResponse(w, apiResponse)
 			return
@@ -289,7 +289,7 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request) {
 				Str("api_error_code", apiResponse.Error.Code).
 				Str("api_error_message", apiResponse.Error.Message).
 				Int("api_error_status", apiResponse.Error.HTTPStatusCode).
-				Str("lastName", updates.LastName).
+				Str("lastName", *updates.LastName).
 				Msg("Validation error: invalid last name format.")
 			models.SendApiResponse(w, apiResponse)
 			return
