@@ -1,10 +1,9 @@
-import { useNavigate } from "@solidjs/router";
+import { A } from "@solidjs/router";
 import { createSignal, Switch, Match, Show, For } from "solid-js";
 import { AiOutlineMenuFold, AiOutlineMenuUnfold } from "solid-icons/ai";
 import NavLink from "./NavLink";
 
 const Navbar = () => {
-  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = createSignal(false);
 
   const navItems = [
@@ -79,15 +78,18 @@ const Navbar = () => {
               />
             )}
           </For>
-          <button
+          <A
+            href="/auth"
+            onClick={() => {
+              setIsMenuOpen(false);
+            }}
             size="sm"
             className="bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700
                        px-4 py-2 rounded-full shadow-md hover:shadow-lg transition-all duration-300
                        font-semibold text-sm"
-            onClick={() => navigate("/auth")}
           >
             Start Chatting
-          </button>
+          </A>
         </nav>
       </div>
 
@@ -104,15 +106,15 @@ const Navbar = () => {
               />
             )}
           </For>
-          <button
+          <A
+            href="/auth"
             className="block w-full text-left py-2 px-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 rounded-md shadow-md hover:shadow-lg transition-all duration-300 font-semibold text-sm"
             onClick={() => {
-              navigate("/auth");
               setIsMenuOpen(false);
             }}
           >
             Start Chatting
-          </button>
+          </A>
         </nav>
       </Show>
     </header>
