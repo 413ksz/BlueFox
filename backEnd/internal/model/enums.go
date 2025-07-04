@@ -1,4 +1,4 @@
-package models
+package model
 
 // Enums for gorm models
 type Status string

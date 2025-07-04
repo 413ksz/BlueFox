@@ -2,12 +2,12 @@
 // To run: cd backEnd/pkg/validation && go test -v.
 // This file is part of the 'validation_test' package,
 // which is separate from the 'validation' package.
-package validation_test
+package user_validation_test
 
 import (
 	"testing"
 
-	"github.com/413ksz/BlueFox/backEnd/pkg/validation"
+	validation "github.com/413ksz/BlueFox/backEnd/internal/util/validation/user_validation"
 )
 
 // TestValidateUsername tests the ValidateUsername function.

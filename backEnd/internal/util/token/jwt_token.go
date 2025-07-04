@@ -1,4 +1,4 @@
-package jwt_token
+package token
 
 import (
 	// For formatted error messages
@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/413ksz/BlueFox/backEnd/pkg/apierrors"
+	"github.com/413ksz/BlueFox/backEnd/internal/apierrors"
 	"github.com/413ksz/BlueFox/backEnd/pkg/models"
 	"github.com/golang-jwt/jwt/v5"
 )

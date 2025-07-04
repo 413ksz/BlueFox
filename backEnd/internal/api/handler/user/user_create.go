@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/413ksz/BlueFox/backEnd/pkg/apierrors"
-	"github.com/413ksz/BlueFox/backEnd/pkg/database"
+	"github.com/413ksz/BlueFox/backEnd/internal/apierrors"
+	"github.com/413ksz/BlueFox/backEnd/internal/database"
+	"github.com/413ksz/BlueFox/backEnd/internal/model"
+	passwordHashing "github.com/413ksz/BlueFox/backEnd/internal/util/password"
+	validation "github.com/413ksz/BlueFox/backEnd/internal/util/validation/user_validation"
 	"github.com/413ksz/BlueFox/backEnd/pkg/models"
-	passwordHashing "github.com/413ksz/BlueFox/backEnd/pkg/password_hashing"
-	"github.com/413ksz/BlueFox/backEnd/pkg/validation"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/rs/zerolog/log"
 )
@@ -24,7 +25,7 @@ func UserCreateHandler(w http.ResponseWriter, r *http.Request) {
 		STATUS_DEFAULT int    = http.StatusCreated
 	)
 
-	apiResponse := &models.ApiResponse[models.User]{}
+	apiResponse := &models.ApiResponse[model.User]{}
 	apiResponse.Method = METHOD
 	apiResponse.Context = CONTEXT
 	apiResponse.StatusCode = STATUS_DEFAULT
@@ -55,7 +56,7 @@ func UserCreateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var newUser models.User
+	var newUser model.User
 
 	// Decode the JSON request body into the newUser struct.
 	err := json.NewDecoder(r.Body).Decode(&newUser)

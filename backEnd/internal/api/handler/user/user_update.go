@@ -7,11 +7,12 @@ import (
 	// Required for time.Time in DTO
 	// Required for uuid.UUID in DTO
 
-	"github.com/413ksz/BlueFox/backEnd/pkg/apierrors"
-	"github.com/413ksz/BlueFox/backEnd/pkg/database"
+	"github.com/413ksz/BlueFox/backEnd/internal/apierrors"
+	"github.com/413ksz/BlueFox/backEnd/internal/database"
+	"github.com/413ksz/BlueFox/backEnd/internal/model"
+	passwordHashing "github.com/413ksz/BlueFox/backEnd/internal/util/password"
+	validation "github.com/413ksz/BlueFox/backEnd/internal/util/validation/user_validation"
 	"github.com/413ksz/BlueFox/backEnd/pkg/models"
-	passwordHashing "github.com/413ksz/BlueFox/backEnd/pkg/password_hashing"
-	"github.com/413ksz/BlueFox/backEnd/pkg/validation"
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/v5/pgconn" // For PostgreSQL specific errors
 	"github.com/rs/zerolog/log"
@@ -32,7 +33,7 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	)
 
 	// Initialize the API response structure
-	apiResponse := &models.ApiResponse[models.User]{}
+	apiResponse := &models.ApiResponse[model.User]{}
 	apiResponse.Method = METHOD
 	apiResponse.Context = CONTEXT
 	apiResponse.StatusCode = STATUS_DEFAULT
@@ -87,7 +88,7 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var existingUser models.User
+	var existingUser model.User
 	// Fetch the existing user from the database to ensure it exists and for GORM's Model context.
 	result := db.First(&existingUser, "id = ?", userID)
 
@@ -122,8 +123,8 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var updates models.User
-	// Decode the JSON request body into the models.User struct.
+	var updates model.User
+	// Decode the JSON request body into the model.User struct.
 	err := json.NewDecoder(r.Body).Decode(&updates)
 	if err != nil {
 		apiResponse.Error = apierrors.ERROR_CODE_ENCODE_ERROR.ApiErrorResponse("Invalid JSON data for update", nil)
@@ -374,8 +375,8 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Prepare and send the successful API response.
 	apiResponse.Message = "User updated successfully."
-	apiResponse.Data = &models.ResponseData[models.User]{
-		Items: []models.User{existingUser}, // Return the full, updated user object
+	apiResponse.Data = &models.ResponseData[model.User]{
+		Items: []model.User{existingUser}, // Return the full, updated user object
 	}
 
 	log.Info().

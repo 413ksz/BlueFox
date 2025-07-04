@@ -1,4 +1,4 @@
-package validation
+package user_validation
 
 import (
 	"regexp"

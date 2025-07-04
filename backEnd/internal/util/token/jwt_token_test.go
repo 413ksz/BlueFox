@@ -1,4 +1,4 @@
-package jwt_token_test
+package token_test
 
 import (
 	"fmt"
@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/413ksz/BlueFox/backEnd/pkg/apierrors"
+	"github.com/413ksz/BlueFox/backEnd/internal/apierrors"
+	jwt_token "github.com/413ksz/BlueFox/backEnd/internal/util/token"
 	"github.com/413ksz/BlueFox/backEnd/pkg/models"
-	jwt_token "github.com/413ksz/BlueFox/backEnd/pkg/token"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 )

@@ -4,7 +4,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/413ksz/BlueFox/backEnd/pkg/database"
+	"github.com/413ksz/BlueFox/backEnd/internal/database"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )

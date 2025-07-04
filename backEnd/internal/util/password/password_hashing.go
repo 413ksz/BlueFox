@@ -1,4 +1,4 @@
-package passwordHashing
+package password
 
 import (
 	"errors"

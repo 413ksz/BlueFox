@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/413ksz/BlueFox/backEnd/pkg/apierrors"
-	"github.com/413ksz/BlueFox/backEnd/pkg/database"
+	"github.com/413ksz/BlueFox/backEnd/internal/apierrors"
+	"github.com/413ksz/BlueFox/backEnd/internal/database"
+	"github.com/413ksz/BlueFox/backEnd/internal/model"
+	passwordHashing "github.com/413ksz/BlueFox/backEnd/internal/util/password"
+	"github.com/413ksz/BlueFox/backEnd/internal/util/token"
+	validation "github.com/413ksz/BlueFox/backEnd/internal/util/validation/user_validation"
 	"github.com/413ksz/BlueFox/backEnd/pkg/models"
-	passwordHashing "github.com/413ksz/BlueFox/backEnd/pkg/password_hashing"
-	jwt_token "github.com/413ksz/BlueFox/backEnd/pkg/token"
-	"github.com/413ksz/BlueFox/backEnd/pkg/validation"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
@@ -24,7 +25,7 @@ func UserLoginHandler(w http.ResponseWriter, r *http.Request) {
 	)
 	db := database.DB
 
-	apiResponse := &models.ApiResponse[models.User]{}
+	apiResponse := &models.ApiResponse[model.User]{}
 	apiResponse.Method = METHOD
 	apiResponse.Context = CONTEXT
 	apiResponse.StatusCode = STATUS_DEFAULT
@@ -52,7 +53,7 @@ func UserLoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Decode the JSON request body into the user struct.
-	var user models.User
+	var user model.User
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		apiResponse.Error = apierrors.ERROR_CODE_ENCODE_ERROR.ApiErrorResponse("Invalid request body", err)
@@ -116,7 +117,7 @@ func UserLoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fetchedUser := models.User{}
+	fetchedUser := model.User{}
 	// Attempt to find a user with the provided email and password in the database.
 	result := db.Where("email = ?", user.Email).Preload("ProfilePictureAsset").First(&fetchedUser).Select("id", "username", "profile_picture_asset_id")
 	if result.Error != nil {
@@ -164,7 +165,7 @@ func UserLoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate a JWT token for the user
-	token, err := jwt_token.GenerateJWTToken(user.Username, user.ID.String(), user.ProfilePictureAsset.UrlPath)
+	token, err := token.GenerateJWTToken(user.Username, user.ID.String(), "")
 
 	if err != nil {
 		apiResponse.Error = apierrors.ERROR_CODE_DATABASE_ERROR.ApiErrorResponse("Error generating JWT token", nil)

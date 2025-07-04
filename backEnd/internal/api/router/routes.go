@@ -1,8 +1,8 @@
 package router
 
 import (
-	"github.com/413ksz/BlueFox/backEnd/pkg/handlers"
-	"github.com/413ksz/BlueFox/backEnd/pkg/handlers/user"
+	"github.com/413ksz/BlueFox/backEnd/internal/api/handler"
+	"github.com/413ksz/BlueFox/backEnd/internal/api/handler/user"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 )
@@ -14,10 +14,10 @@ func RegisterRoutes(r *mux.Router) {
 		Str("event", "routes_register_start").
 		Msg("Started registering routes...")
 
-	r.HandleFunc("/api/test", handlers.TestHandler).Methods("GET")
+	r.HandleFunc("/api/test", handler.TestHandler).Methods("GET")
 	r.HandleFunc("/api/user/{id}", user.UserGetHandler).Methods("GET")
 	r.HandleFunc("/api/user", user.UserCreateHandler).Methods("PUT")
-	r.HandleFunc("/api/user/{id}", handlers.TestHandler).Methods("DELETE")
+	r.HandleFunc("/api/user/{id}", handler.TestHandler).Methods("DELETE")
 	r.HandleFunc("/api/user/login", user.UserLoginHandler).Methods("POST")
 	r.HandleFunc("/api/user/{id}", user.UserUpdateHandler).Methods("PATCH")
 

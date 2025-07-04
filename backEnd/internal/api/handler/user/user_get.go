@@ -3,8 +3,9 @@ package user
 import (
 	"net/http"
 
-	"github.com/413ksz/BlueFox/backEnd/pkg/apierrors"
-	"github.com/413ksz/BlueFox/backEnd/pkg/database"
+	"github.com/413ksz/BlueFox/backEnd/internal/apierrors"
+	"github.com/413ksz/BlueFox/backEnd/internal/database"
+	"github.com/413ksz/BlueFox/backEnd/internal/model"
 	"github.com/413ksz/BlueFox/backEnd/pkg/models"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
@@ -25,7 +26,7 @@ func UserGetHandler(w http.ResponseWriter, r *http.Request) {
 		STATUS_DEFAULT int    = http.StatusOK
 	)
 
-	apiResponse := &models.ApiResponse[models.User]{}
+	apiResponse := &models.ApiResponse[model.User]{}
 	apiResponse.Method = METHOD
 	apiResponse.Context = CONTEXT
 	apiResponse.StatusCode = STATUS_DEFAULT
@@ -80,7 +81,7 @@ func UserGetHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user models.User // Declare a variable to hold the fetched user data
+	var user model.User // Declare a variable to hold the fetched user data
 
 	// Query the database for the user with the specified ID (UUID).
 	// GORM will populate the 'user' variable if a record is found.
@@ -120,8 +121,8 @@ func UserGetHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// If the user is found, return the user data as JSON.
-	apiResponse.Data = &models.ResponseData[models.User]{
-		Items: []models.User{user},
+	apiResponse.Data = &models.ResponseData[model.User]{
+		Items: []model.User{user},
 	}
 
 	log.Info().

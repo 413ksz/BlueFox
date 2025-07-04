@@ -1,9 +1,9 @@
-package passwordHashing_test
+package password_test
 
 import (
 	"testing"
 
-	passwordHashing "github.com/413ksz/BlueFox/backEnd/pkg/password_hashing"
+	passwordHashing "github.com/413ksz/BlueFox/backEnd/internal/util/password"
 	"golang.org/x/crypto/bcrypt"
 )
 
