@@ -7,8 +7,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/413ksz/BlueFox/backEnd/pkg/database"
-	"github.com/413ksz/BlueFox/backEnd/pkg/router"
+	"github.com/413ksz/BlueFox/backEnd/internal/api/router"
+	"github.com/413ksz/BlueFox/backEnd/internal/database"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 	"github.com/rs/zerolog"
