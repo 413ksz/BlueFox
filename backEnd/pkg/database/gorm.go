@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/413ksz/BlueFox/backEnd/domain/users"
 	"github.com/413ksz/BlueFox/backEnd/pkg/models"
 	"github.com/rs/zerolog/log"
 	"gorm.io/driver/postgres"
@@ -190,7 +191,7 @@ func Migrate(db *gorm.DB, isFullMigration bool) {
 			Str("event", "migration_full_data_loss_warning").
 			Msg("Performing full migration: Dropping all specified tables. DATA LOSS WILL OCCUR!")
 		db.Migrator().DropTable(
-			&models.User{},
+			&users.User{},
 			&models.Message{},
 			&models.UserFriendConnect{},
 			&models.Server{},
@@ -206,7 +207,7 @@ func Migrate(db *gorm.DB, isFullMigration bool) {
 			Msg("All specified tables dropped for full migration.")
 	}
 	err := db.AutoMigrate(
-		&models.User{},
+		&users.User{},
 		&models.Message{},
 		&models.UserFriendConnect{},
 		&models.Server{},
