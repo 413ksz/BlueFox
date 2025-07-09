@@ -1,6 +1,6 @@
 // Handler is the primary entry point for the serverless function hosted on Vercel
 // Rename this package to main to run run the server locally
-package handler
+package main
 
 import (
 	"net/http"

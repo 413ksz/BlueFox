@@ -1,6 +1,11 @@
 package apierrors
 
-import "github.com/413ksz/BlueFox/backEnd/pkg/models"
+import (
+	"net/http"
+
+	"github.com/413ksz/BlueFox/backEnd/pkg/models"
+	"github.com/rs/zerolog"
+)
 
 type ErrorCode string
 
@@ -25,7 +30,6 @@ const (
 	ERROR_CODE_FORBIDDEN                     ErrorCode = "FORBIDDEN"
 	ERROR_CODE_INTERNAL_SERVER               ErrorCode = "INTERNAL_SERVER_ERROR"
 	ERROR_CODE_DATABASE_ERROR                ErrorCode = "DATABASE_ERROR"
-	ERROR_CODE_INVALID_INPUT                 ErrorCode = "INVALID_INPUT"
 	ERROR_CODE_SERVICE_UNAVAILABLE           ErrorCode = "SERVICE_UNAVAILABLE"
 	ERROR_CODE_DATABASE_INITIALIZE           ErrorCode = "DATABASE_INITIALIZE"
 	ERROR_CODE_UNIQUE_KEY_VIOLATION          ErrorCode = "UNIQUE_KEY_VIOLATION"
@@ -34,25 +38,26 @@ const (
 )
 
 var ErrorMessages = map[ErrorCode]struct {
-	Message string
+	Message  string
+	HttpCode int
+	LogLevel zerolog.Level
 }{
 	ERROR_CODE_GENERIC:                       {Message: "An unexpected error occurred."},
-	ERROR_CODE_BAD_REQUEST:                   {Message: "The request was invalid or malformed."},
-	ERROR_CODE_UNPROCESSABLE_ENTITY:          {Message: "One or more input values are invalid."},
+	ERROR_CODE_BAD_REQUEST:                   {Message: "The request was invalid or malformed.", HttpCode: http.StatusBadRequest, LogLevel: zerolog.WarnLevel},
+	ERROR_CODE_UNPROCESSABLE_ENTITY:          {Message: "One or more input values are invalid", HttpCode: http.StatusUnprocessableEntity, LogLevel: zerolog.WarnLevel},
+	ERROR_CODE_JSON_SYNTAX:                   {Message: "The request body contains malformed JSON or invalid JSON syntax.", HttpCode: http.StatusBadRequest, LogLevel: zerolog.WarnLevel},
+	ERROR_CODE_JSON_TYPE_MISMATCH:            {Message: "The request body contains a field with an unexpected type.", HttpCode: http.StatusBadRequest, LogLevel: zerolog.WarnLevel},
+	ERROR_CODE_JSON_UKNOWN_FIELD:             {Message: "The request body contains an unknown field.", HttpCode: http.StatusBadRequest, LogLevel: zerolog.WarnLevel},
 	ERROR_CODE_NOT_FOUND:                     {Message: "The requested resource could not be found."},
 	ERROR_CODE_UNAUTHORIZED:                  {Message: "Authentication failed."},
 	ERROR_CODE_FORBIDDEN:                     {Message: "You do not have permission to perform this action."},
-	ERROR_CODE_INTERNAL_SERVER:               {Message: "An internal server error occurred."},
+	ERROR_CODE_INTERNAL_SERVER:               {Message: "An internal server error occurred.", HttpCode: http.StatusInternalServerError, LogLevel: zerolog.ErrorLevel},
 	ERROR_CODE_DATABASE_ERROR:                {Message: "A database operation failed."},
-	ERROR_CODE_INVALID_INPUT:                 {Message: "The provided input is malformed."},
 	ERROR_CODE_SERVICE_UNAVAILABLE:           {Message: "The service is temporarily unavailable."},
 	ERROR_CODE_DATABASE_INITIALIZE:           {Message: "Database initialization failed."},
 	ERROR_CODE_UNIQUE_KEY_VIOLATION:          {Message: "A unique key violation occurred."},
 	ERROR_CODE_ENVIREMENT_VARIABLE_NOT_FOUND: {Message: "Environment variable not found."},
-	ERROR_CODE_JSON_SYNTAX:                   {Message: "The request body contains malformed JSON or invalid JSON syntax."},
-	ERROR_CODE_JSON_TYPE_MISMATCH:            {Message: "The request body contains a field with an unexpected type."},
-	ERROR_CODE_JSON_UKNOWN_FIELD:             {Message: "The request body contains an unknown field."},
-	ERROR_CODE_VALIDATION_REGISTRATION_ERROR: {Message: "The validator domain spesific registration failed."},
+	ERROR_CODE_VALIDATION_REGISTRATION_ERROR: {Message: "The validator domain spesific registration failed.", LogLevel: zerolog.FatalLevel},
 }
 
 func (code ErrorCode) NewApiError(details any, err error) *models.CustomError {
@@ -71,7 +76,9 @@ func (code ErrorCode) NewApiError(details any, err error) *models.CustomError {
 		Code:    string(code),
 		Message: responseInfo.Message,
 		//Details and Err can be nil because They are omitted by default
-		Details: details,
-		Err:     err,
+		HttpCode: responseInfo.HttpCode,
+		LogLevel: responseInfo.LogLevel,
+		Details:  details,
+		Err:      err,
 	}
 }

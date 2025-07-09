@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
@@ -17,10 +18,12 @@ type ValidationErrorDetail struct {
 }
 
 type CustomError struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
-	Details any    `json:"details,omitempty"`
-	Err     error  `json:"-"`
+	Code     string        `json:"code"`
+	Message  string        `json:"message"`
+	Details  any           `json:"details,omitempty"`
+	Err      error         `json:"-"`
+	HttpCode int           `json:"-"`
+	LogLevel zerolog.Level `json:"-"`
 }
 
 type Pagination struct {

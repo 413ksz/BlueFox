@@ -31,7 +31,6 @@ func (repository UserRepository) Create(user *User) *models.CustomError {
 	err := databaseerrorhelper.GetDatabaseErrorMessage(result)
 	if err != nil {
 		return err
-
 	}
 
 	return nil

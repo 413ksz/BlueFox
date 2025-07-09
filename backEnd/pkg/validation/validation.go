@@ -121,13 +121,13 @@ func (v *Validator) ValidateStruct(obj interface{}) error {
 
 // ValidateRequestBody validates the request body of an HTTP request and unmarshals it into a struct (dto).
 // It handles various JSON parsing errors such as syntax errors, type mismatches, and unknown fields.
-// Upon encountering an error, it populates the provided ApiResponse with appropriate error details
+// Upon encountering an error, it populates a custom error with appropriate error details
 // and an HTTP status code, then returns a CustomError.
 //
 //  1. **Go Language Limitation:** In Go, methods defined on a *non-generic* struct (like 'Validator' in this case)
 //     cannot have their own type parameters. If 'Validator' were 'Validator[T any]', then its methods could use 'T'.
 //     However, since 'Validator' itself doesn't need to be generic, the method must accept a concrete type or an interface.
-//     Using [T any, U any](apiResponse[T] , dto[U]) would result in a compile-time error.
+//     Using [T any](dto[U]) would result in a compile-time error.
 //
 //  2. **Flexibility for Diverse DTOs:** This design allows the 'ValidateDto' method to handle any arbitrary
 //     struct type (e.g., UserCreateRequest, ProductUpdateRequest) as a DTO. All concrete types in Go implicitly
@@ -139,8 +139,6 @@ func (v *Validator) ValidateStruct(obj interface{}) error {
 //     runtime reflection mechanism required by such validation libraries.
 //
 // Parameters:
-//   - apiResponse: A pointer to an `ApiResponse` object. This object will be updated with error
-//     information if validation fails.
 //   - dto: A pointer to the struct that will receive the unmarshaled JSON data from the request body.
 //   - request: The incoming `http.Request` containing the JSON body to be validated and decoded.
 //
@@ -148,7 +146,7 @@ func (v *Validator) ValidateStruct(obj interface{}) error {
 //   - *models.CustomError: Returns a pointer to a `CustomError` if any validation or decoding
 //     error occurs. Returns `nil` if the request body is successfully
 //     read, parsed, and unmarshaled into the `dto`.
-func (v *Validator) ValidateRequestBody(apiResponse *models.ApiResponse[any], dto interface{}, request *http.Request) (customError *models.CustomError) {
+func (v *Validator) ValidateRequestBody(dto interface{}, request *http.Request) (customError *models.CustomError) {
 
 	// Read the entire request body into a byte slice.
 	// This is necessary because the request.Body is an io.Reader and can only be read once.
@@ -157,8 +155,6 @@ func (v *Validator) ValidateRequestBody(apiResponse *models.ApiResponse[any], dt
 		// If there's an error reading the body (e.g., network issue, client disconnect),
 		// create an internal server error.
 		apiError := apierrors.ERROR_CODE_INTERNAL_SERVER.NewApiError("Failed to read request body", err)
-		// Update the apiResponse with the error message and status code.
-		apiResponse.WithError(apiError.Message, apiError, http.StatusInternalServerError)
 		// Return the custom error.
 		return apiError
 	}
@@ -186,8 +182,6 @@ func (v *Validator) ValidateRequestBody(apiResponse *models.ApiResponse[any], dt
 					unmarshalErr.Field, unmarshalErr.Type.String()),
 				err,
 			)
-			// Update apiResponse with the bad request status and error details.
-			apiResponse.WithError(apiError.Message, apiError, http.StatusBadRequest)
 			return apiError
 		}
 
@@ -195,8 +189,6 @@ func (v *Validator) ValidateRequestBody(apiResponse *models.ApiResponse[any], dt
 		if syntaxErr, ok := err.(*json.SyntaxError); ok {
 			// Create a specific API error for JSON syntax issues.
 			apiError := apierrors.ERROR_CODE_JSON_SYNTAX.NewApiError(fmt.Sprintf("Invalid JSON syntax: %s", syntaxErr.Error()), err)
-			// Update apiResponse with the bad request status and error details.
-			apiResponse.WithError(apiError.Message, apiError, http.StatusBadRequest)
 			return apiError
 		}
 
@@ -205,8 +197,6 @@ func (v *Validator) ValidateRequestBody(apiResponse *models.ApiResponse[any], dt
 		if strings.Contains(err.Error(), "json: unknown field") {
 			// Extract the unknown field name from the error message and create a specific API error.
 			apiError := apierrors.ERROR_CODE_JSON_UKNOWN_FIELD.NewApiError(strings.TrimPrefix(err.Error(), "json: unknown field "), err)
-			// Update apiResponse with the bad request status and error details.
-			apiResponse.WithError(apiError.Message, apiError, http.StatusBadRequest)
 			return apiError
 		}
 
@@ -214,15 +204,11 @@ func (v *Validator) ValidateRequestBody(apiResponse *models.ApiResponse[any], dt
 		if err == io.EOF {
 			// Create a specific API error for an empty request body.
 			apiError := apierrors.ERROR_CODE_BAD_REQUEST.NewApiError("Request body is empty", err)
-			// Update apiResponse with the bad request status and error details.
-			apiResponse.WithError(apiError.Message, apiError, http.StatusBadRequest)
 			return apiError
 		}
 
 		// For any other unhandled decoding errors, return a generic bad request error.
 		apiError := apierrors.ERROR_CODE_BAD_REQUEST.NewApiError("Body decoding failed", err)
-		// Update apiResponse with the bad request status and error details.
-		apiResponse.WithError(apiError.Message, apiError, http.StatusBadRequest)
 		return apiError
 	}
 
@@ -231,14 +217,14 @@ func (v *Validator) ValidateRequestBody(apiResponse *models.ApiResponse[any], dt
 	return nil
 }
 
-// ValidateDto validates a Data Transfer Object (DTO) and populates the apiResponse with any validation errors.
+// ValidateDto validates a Data Transfer Object (DTO).
 //
-// This method accepts 'dto' as an 'interface{}' (or 'any') type for the following reasons:
+// This method accepts 'dto' as an 'interface{}' type for the following reasons:
 //
 //  1. **Go Language Limitation:** In Go, methods defined on a *non-generic* struct (like 'Validator' in this case)
 //     cannot have their own type parameters. If 'Validator' were 'Validator[T any]', then its methods could use 'T'.
 //     However, since 'Validator' itself doesn't need to be generic, the method must accept a concrete type or an interface.
-//     Using [T any, U any](apiResponse[T] , dto[U]) would result in a compile-time error.
+//     Using [T any](dto[T) would result in a compile-time error.
 //
 //  2. **Flexibility for Diverse DTOs:** This design allows the 'ValidateDto' method to handle any arbitrary
 //     struct type (e.g., UserCreateRequest, ProductUpdateRequest) as a DTO. All concrete types in Go implicitly
@@ -250,12 +236,11 @@ func (v *Validator) ValidateRequestBody(apiResponse *models.ApiResponse[any], dt
 //     runtime reflection mechanism required by such validation libraries.
 //
 // paramaters:
-//   - apiResponse: A pointer to an ApiResponse object, which will be updated with any validation errors.
 //   - dto: The Data Transfer Object (DTO) to be validated.
 //
 // returns:
 //   - *models.CustomError: A CustomError if validation fails, nil otherwise.
-func (v *Validator) ValidateDto(apiResponse *models.ApiResponse[any], dto interface{}) *models.CustomError {
+func (v *Validator) ValidateDto(dto interface{}) *models.CustomError {
 	// Attempt to validate the DTO using the underlying validation library.
 	if err := v.ValidateStruct(dto); err != nil {
 		// Differentiate between validation errors and other unexpected errors.
@@ -279,14 +264,12 @@ func (v *Validator) ValidateDto(apiResponse *models.ApiResponse[any], dto interf
 			// Construct an API error for unprocessable entities (HTTP 422),
 			// embedding the specific validation failure details.
 			apiError := apierrors.ERROR_CODE_UNPROCESSABLE_ENTITY.NewApiError(details, err)
-			apiResponse.WithError(apiError.Message, apiError, http.StatusUnprocessableEntity)
 			return apiError
 		}
 
 		// Handle any non-validation errors as internal server errors (HTTP 500).
 		// These typically indicate unexpected issues within the validation process itself.
 		internalError := apierrors.ERROR_CODE_INTERNAL_SERVER.NewApiError(err.Error(), err)
-		apiResponse.WithError(internalError.Message, internalError, http.StatusInternalServerError)
 		return internalError
 	}
 

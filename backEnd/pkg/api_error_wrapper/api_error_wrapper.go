@@ -3,6 +3,7 @@ package apierrorwrapper
 import (
 	"net/http"
 
+	"github.com/413ksz/BlueFox/backEnd/pkg/logging"
 	"github.com/413ksz/BlueFox/backEnd/pkg/models"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
@@ -44,7 +45,10 @@ func ErrorWrapper[T any](handler AppHandler[T], componentName string) http.Handl
 		// If the handler returned a custom error and an apiResponse, log it and send the appropriate response.
 		// The apiResponse check is added to avoid a panic when the apiResponse is nil because we work with pointers
 		if customError != nil && apiResponse != nil {
-			log.Error().
+
+			logEvent := logging.LogLevelHelperForError(customError)
+
+			logEvent.
 				Str("request_id", requestId).
 				Str("method", r.Method).
 				Str("path", r.URL.Path).

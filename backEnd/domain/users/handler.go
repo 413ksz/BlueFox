@@ -27,20 +27,23 @@ func (userHandler *UserHandler) UserCreateHandler(w http.ResponseWriter, r *http
 	var dto UserCreateRequestDTO
 
 	// Validate the request body and unmarshal it into the DTO
-	customError := userHandler.Validator.ValidateRequestBody(apiResponse, &dto, r)
+	customError := userHandler.Validator.ValidateRequestBody(&dto, r)
 	if customError != nil {
+		apiResponse.WithError(customError.Message, customError, customError.HttpCode)
 		return apiResponse, customError
 	}
 
 	// Validate the input values of the DTO
-	customError = userHandler.Validator.ValidateDto(apiResponse, &dto)
+	customError = userHandler.Validator.ValidateDto(&dto)
 	if customError != nil {
+		apiResponse.WithError(customError.Message, customError, customError.HttpCode)
 		return apiResponse, customError
 	}
 
 	// Call the service layer to create the user
 	customError = userHandler.UserService.CreateUser(dto)
 	if customError != nil {
+		apiResponse.WithError(customError.Message, customError, customError.HttpCode)
 		return apiResponse, customError
 	}
 
