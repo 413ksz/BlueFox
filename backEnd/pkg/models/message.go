@@ -1,6 +1,7 @@
 package models
 
 import (
+	"os/user"
 	"time"
 
 	"github.com/google/uuid"
@@ -20,7 +21,7 @@ type Message struct {
 	ReplyTo *uuid.UUID `gorm:"type:uuid"` // Can be null if not a reply
 
 	// Relations
-	Author         User                `gorm:"foreignKey:AuthorID"`  // Relation: A message has one author
+	Author         user.User           `gorm:"foreignKey:AuthorID"`  // Relation: A message has one author
 	ReplyToMessage *Message            `gorm:"foreignKey:ReplyTo"`   // Relation: A message can reply to another message
 	Replies        []Message           `gorm:"foreignKey:ReplyTo"`   // Relation: A message can have many replies
 	Attachments    []MessageAttachment `gorm:"foreignKey:MessageID"` // Relation: A message can have many attachments

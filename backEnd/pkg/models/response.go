@@ -2,17 +2,25 @@ package models
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
+type ValidationErrorDetail struct {
+	Field   string `json:"field"`
+	Tag     string `json:"tag"`
+	Value   any    `json:"value,omitempty"`
+	Param   string `json:"param,omitempty"`
+	Message string `json:"message,omitempty"`
+}
+
 type CustomError struct {
-	Code           string `json:"code"`
-	Message        string `json:"message"`
-	Details        any    `json:"details,omitempty"`
-	Err            error  `json:"-"`
-	HTTPStatusCode int    `json:"-"`
+	Code    string `json:"code"`
+	Message string `json:"message"`
+	Details any    `json:"details,omitempty"`
+	Err     error  `json:"-"`
 }
 
 type Pagination struct {
@@ -31,8 +39,6 @@ type ResponseData[TItemtype any] struct {
 }
 
 type ApiResponse[TItemtype any] struct {
-	Context    string                   `json:"context,omitempty"`
-	Method     string                   `json:"method,omitempty"`
 	Params     map[string]interface{}   `json:"params,omitempty"`
 	Data       *ResponseData[TItemtype] `json:"data,omitempty"`
 	Error      *CustomError             `json:"error,omitempty"`
@@ -40,25 +46,58 @@ type ApiResponse[TItemtype any] struct {
 	StatusCode int                      `json:"-"`
 }
 
-func NewApiResponse[TItemtype any]() *ApiResponse[TItemtype] {
-	return &ApiResponse[TItemtype]{}
+func NewApiResponse[TItemtype any](params map[string]interface{}, statusCode int, message string) *ApiResponse[TItemtype] {
+	if statusCode == 0 {
+		statusCode = http.StatusOK
+
+	}
+	if message == "" {
+		message = http.StatusText(statusCode)
+
+	}
+
+	return &ApiResponse[TItemtype]{
+		Params:     params,
+		StatusCode: statusCode,
+		Message:    message,
+		Data:       nil,
+		Error:      nil,
+	}
 }
 
-func SendApiResponse[T any](w http.ResponseWriter, apiResponse *ApiResponse[T]) {
-	// Write the determined HTTP status code to the response header
-	if apiResponse.Error != nil {
-		w.WriteHeader(apiResponse.Error.HTTPStatusCode)
-	} else {
-		w.WriteHeader(apiResponse.StatusCode)
-	}
+func (apiResponse *ApiResponse[TItemtype]) WithData(Message string, Data *ResponseData[TItemtype], statusCode int) {
+	apiResponse.Message = Message
+	apiResponse.Data = Data
+	apiResponse.StatusCode = statusCode
+	apiResponse.Error = nil
+}
+
+func (apiResponse *ApiResponse[TItemtype]) WithError(Message string, Error *CustomError, statusCode int) {
+	apiResponse.Message = Message
+	apiResponse.Error = Error
+	apiResponse.StatusCode = statusCode
+	apiResponse.Data = nil
+}
+
+func SendApiResponse[T any](r *http.Request, w http.ResponseWriter, apiResponse *ApiResponse[T], requestId string, componentName string) {
 	// Set the Content-Type header to application/json
 	w.Header().Set("Content-Type", "application/json")
+
+	// Write the HTTP status code
+	w.WriteHeader(apiResponse.StatusCode)
 
 	// Encode the apiResponse struct to JSON and write it to the response body
 	err := json.NewEncoder(w).Encode(apiResponse)
 	if err != nil {
 		// Log an error if encoding fails, but don't attempt to write to w again
 		// as headers have already been sent.
-		log.Printf("Error encoding API response: %v", err)
+		log.Error().
+			Str("request_id", requestId).
+			Str("method", r.Method).
+			Str("path", r.URL.Path).
+			Str("component", componentName).
+			Str("status", "failed").
+			Str("event", "api_response_encoding_failed").
+			Msg("Error occurred encoding API response")
 	}
 }

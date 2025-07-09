@@ -1,14 +1,17 @@
 // Handler is the primary entry point for the serverless function hosted on Vercel
 // Rename this package to main to run run the server locally
-package handler
+package main
 
 import (
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/413ksz/BlueFox/backEnd/domain/users"
+	"github.com/413ksz/BlueFox/backEnd/pkg/aggregator"
 	"github.com/413ksz/BlueFox/backEnd/pkg/database"
 	"github.com/413ksz/BlueFox/backEnd/pkg/router"
+	"github.com/413ksz/BlueFox/backEnd/pkg/validation"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 	"github.com/rs/zerolog"
@@ -66,16 +69,46 @@ func init() {
 		Str("event", "app_db_init_success").
 		Msg("Global database connection successfully initialized.")
 
+	log.Info().
+		Str("component", "main_app").
+		Str("event", "validation_registering_start").
+		Msg("started registering validations for domains...")
+	// --- Domain Validation ---
+	// Register custom validation functions for the domains
+
+	// Create a new instance of the Validator
+	validator := validation.NewValidator()
+
+	// Register the custom validation functions for the users domain
+	users.RegisterDomainValidators(validator)
+
+	log.Info().
+		Str("component", "main_app").
+		Str("event", "validation_registering_finished").
+		Msg("finished registering validations for domains...")
+
 	// --- API Routes ---
 	// Initialize the API router
+
+	userRepo := users.NewUserRepository(database.DB)
+	userService := users.NewUserService(userRepo)
+	userHandler := users.NewUserHandler(userService, validator)
+
+	handlers := aggregator.NewHandlerAggregator(*userHandler)
+
 	appRouter = mux.NewRouter()
 	// Register the API routes
-	router.RegisterRoutes(appRouter)
+	router.RegisterRoutes(appRouter, *handlers)
 
 	log.Info().
 		Str("component", "main_app").
 		Str("event", "api_routes_initialized").
 		Msg("API routes initialized.")
+
+	log.Info().
+		Str("component", "main_app").
+		Str("event", "app_init_finished").
+		Msg("Serverless function initialized.")
 }
 
 // Handler is the primary entry point for the serverless function hosted on serverless environment.
