@@ -7,21 +7,21 @@ import (
 )
 
 // User table gorm model
-type User struct {
+type UserGorm struct {
 	// Base Fields
-	ID          uuid.UUID  `json:"id" gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
-	Username    string     `json:"username" gorm:"not null;Index"`
-	Email       string     `json:"email" gorm:"not null;unique"`
-	Password    string     `json:"password_hash" gorm:"not null"`
-	FirstName   *string    `json:"first_name"`
-	LastName    *string    `json:"last_name"`
-	CreatedAt   time.Time  `json:"created_at" gorm:"autoCreateTime"`
-	UpdatedAt   *time.Time `json:"updated_at" gorm:"autoUpdateTime"`
-	LastOnline  *time.Time `json:"last_online"`
-	Bio         *string    `json:"bio"`
-	DateOfBirth time.Time  `json:"date_of_birth" gorm:"not null"`
-	Location    *string    `json:"location"`
-	IsVerified  bool       `json:"is_verified" gorm:"default:false"`
+	ID           uuid.UUID  `json:"id" gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
+	Username     string     `json:"username" gorm:"not null;Index"`
+	Email        string     `json:"email" gorm:"size:254;not null;unique"`
+	PasswordHash string     `json:"password_hash" gorm:"not null"`
+	FirstName    *string    `json:"first_name,omitempty"`
+	LastName     *string    `json:"last_name,omitempty"`
+	CreatedAt    time.Time  `json:"created_at" gorm:"autoCreateTime"`
+	UpdatedAt    *time.Time `json:"updated_at,omitempty" gorm:"autoUpdateTime"`
+	LastOnline   *time.Time `json:"last_online,omitempty"`
+	Bio          *string    `json:"bio,omitempty"`
+	DateOfBirth  time.Time  `json:"date_of_birth" gorm:"not null"`
+	Location     *string    `json:"location,omitempty"`
+	IsVerified   bool       `json:"is_verified" gorm:"default:false"`
 
 	// Foreign Key for Profile Picture
 	ProfilePictureAssetID *uuid.UUID `json:"profile_picture_asset_id" gorm:"type:uuid"`

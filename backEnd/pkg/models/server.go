@@ -19,7 +19,7 @@ type Server struct {
 	IconAssetID *uuid.UUID `gorm:"type:uuid"`
 
 	// Relations
-	Owner       User                `gorm:"foreignKey:OwnerID"`     // Relation: A server has one owner
+	Owner       UserGorm            `gorm:"foreignKey:OwnerID"`     // Relation: A server has one owner
 	IconAsset   *MediaAsset         `gorm:"foreignKey:IconAssetID"` // Relation: A server has one icon asset
 	Channels    []Channel           `gorm:"foreignKey:ServerID"`    // Relation: A server has many channels
 	ServerUsers []ServerUserConnect `gorm:"foreignKey:ServerID"`    // Relation: A server has many connected users

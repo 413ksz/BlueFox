@@ -18,6 +18,6 @@ type UserFriendConnect struct {
 	AcceptedAt  *time.Time
 
 	// Relations
-	User1 User `gorm:"foreignKey:User1ID"` // Relation: Connects to the first user in the friendship
-	User2 User `gorm:"foreignKey:User2ID"` // Relation: Connects to the second user in the friendship
+	User1 UserGorm `gorm:"foreignKey:User1ID"` // Relation: Connects to the first user in the friendship
+	User2 UserGorm `gorm:"foreignKey:User2ID"` // Relation: Connects to the second user in the friendship
 }

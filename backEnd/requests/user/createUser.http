@@ -1,222 +1,252 @@
 @host = localhost:9000
 
 ### Test Case 1: Successful User Creation
-PUT http://{{host}}/api/user
+POST http://{{host}}/api/user
 Content-Type: application/json
 
 {
   "username": "newuser123",
   "email": "newuser123@example.com",
-  "password_hash": "StrongPassword!123",
-  "first_name": "John",
-  "last_name": "Doe",
-  "date_of_birth": "1995-10-26T00:00:00Z",
-  "bio": "A passionate developer.",
-  "location": "San Francisco, USA",
-  "profile_picture_asset_id": "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+  "password": "troAngassword!123",
+  "dateOfBirth": "1995-10-26T00:00:00Z"
 }
 
----
-
-### Test Case 2: Successful User Creation (Minimal Required Fields, without optional fields)
-PUT http://{{host}}/api/user
+### Test Case 2: Malformed json
+POST http://{{host}}/api/user
 Content-Type: application/json
 
 {
-  "username": "minimaluser",
-  "email": "minimal.user@example.com",
-  "password_hash": "SecurePassword!456",
-  "first_name": "Jane",
-  "last_name": "Smith",
-  "date_of_birth": "2000-01-01T00:00:00Z"
+  "username": "newuser123",
+  "email": "newuser123@example.com",
+  "password": "troAngassword!123"
+  "dateOfBirth": "1995-10-26T00:00:00Z"
 }
 
----
-
-### Test Case 3: Error - Missing Required Field (Email)
-PUT http://{{host}}/api/user
+### Test Case 3: Malformed json
+POST http://{{host}}/api/user
 Content-Type: application/json
 
 {
-  "username": "missingemail",
-  "password_hash": "ValidPassword!123",
-  "first_name": "Test",
-  "last_name": "User",
-  "date_of_birth": "1980-01-01T00:00:00Z"
+  "username": "newuser123",
+  "email": "newuser123@example.com",
+  "password" "troAngassword!123",
+  "dateOfBirth": "1995-10-26T00:00:00Z"
 }
 
----
-
-### Test Case 4: Error - Missing Required Field (Password)
-PUT http://{{host}}/api/user
+### Test Case 4: Malformed json
+POST http://{{host}}/api/user
 Content-Type: application/json
 
 {
-  "username": "missingpassword",
-  "email": "missing.password_hash@example.com",
-  "first_name": "Test",
-  "last_name": "User",
-  "date_of_birth": "1980-01-01T00:00:00Z"
+  "username: "newuser123",
+  "email": "newuser123@example.com",
+  "password": "troAngassword!123",
+  "dateOfBirth": "1995-10-26T00:00:00Z"
 }
 
----
 
-### Test Case 5: Error - Missing Required Field (Username)
-PUT http://{{host}}/api/user
+### Test Case 5: Malformed json
+POST http://{{host}}/api/user
 Content-Type: application/json
 
 {
-  "email": "missing.username@example.com",
-  "password_hash": "ValidPassword!123",
-  "first_name": "Test",
-  "last_name": "User",
-  "date_of_birth": "1980-01-01T00:00:00Z"
+  "username": "newuser123,
+  "email": "newuser123@example.com",
+  "password": "troAngassword!123",
+  "dateOfBirth": "1995-10-26T00:00:00Z"
 }
 
----
+### Test Case 6: no body
+POST http://{{host}}/api/user
+Content-Type: application/json
 
-### Test Case 6: Error - Missing Required Field (First Name)
-PUT http://{{host}}/api/user
+### Test Case 7: type mismatch for username
+POST http://{{host}}/api/user
 Content-Type: application/json
 
 {
-  "username": "missingfirstname",
-  "email": "missing.first@example.com",
-  "password_hash": "ValidPassword!123",
-  "last_name": "User",
-  "date_of_birth": "1980-01-01T00:00:00Z"
+  "username": 14,
+  "email": "newuser123@example.com",
+  "password": "troAngassword!123",
+  "dateOfBirth": "1995-10-26T00:00:00Z"
 }
 
----
-
-### Test Case 7: Error - Missing Required Field (Last Name)
-PUT http://{{host}}/api/user
+### Test Case 8: Unknown Field
+POST http://{{host}}/api/user
 Content-Type: application/json
 
 {
-  "username": "missinglastname",
-  "email": "missing.last@example.com",
-  "password_hash": "ValidPassword!123",
-  "first_name": "Test",
-  "date_of_birth": "1980-01-01T00:00:00Z"
+  "username": "newuser123",
+  "email": "newuser123@example.com",
+  "password": "troAngassword!123",
+  "dateOfBirth": "1995-10-26T00:00:00Z",
+  "unnecessaryField": "someValue"
 }
 
----
 
-### Test Case 8: Error - Missing Required Field (Date of Birth)
-PUT http://{{host}}/api/user
+
+### Test Case 9: Invalid username too short
+POST http://{{host}}/api/user
 Content-Type: application/json
 
 {
-  "username": "missingdob",
-  "email": "missing.dob@example.com",
-  "password_hash": "ValidPassword!123",
-  "first_name": "Test",
-  "last_name": "User"
+  "username": "a",
+  "email": "newuser123@example.com",
+  "password": "troAngassword!123",
+  "dateOfBirth": "1995-10-26T00:00:00Z"
 }
 
----
-
-### Test Case 9: Error - Invalid Email Format
-PUT http://{{host}}/api/user
+### Test Case 10: Invalid username too long
+POST http://{{host}}/api/user
 Content-Type: application/json
 
 {
-  "username": "invalidemail",
-  "email": "invalid-email-format",
-  "password_hash": "ValidPassword!123",
-  "first_name": "Test",
-  "last_name": "User",
-  "date_of_birth": "1980-01-01T00:00:00Z"
+  "username": "aasdasdassdsaasdsdasd",
+  "email": "newuser123@example.com",
+  "password": "troAngassword!123",
+  "dateOfBirth": "1995-10-26T00:00:00Z"
 }
 
----
-
-### Test Case 10: Error - Invalid Password Format
-PUT http://{{host}}/api/user
+### Test Case 11: Invalid username format
+POST http://{{host}}/api/user
 Content-Type: application/json
 
 {
-  "username": "weakpassuser",
-  "email": "weak.password_hash@example.com",
-  "password_hash": "weak",
-  "first_name": "Test",
-  "last_name": "User",
-  "date_of_birth": "1980-01-01T00:00:00Z"
+  "username": "aas/d",
+  "email": "newuser123@example.com",
+  "password": "troAngassword!123",
+  "dateOfBirth": "1995-10-26T00:00:00Z"
 }
 
----
-
-### Test Case 11: Error - Invalid Username Format
-PUT http://{{host}}/api/user
+### Test Case 12: Invalid email format
+POST http://{{host}}/api/user
 Content-Type: application/json
 
 {
-  "username": "user name with space",
-  "email": "username.space@example.com",
-  "password_hash": "ValidPassword!123",
-  "first_name": "Test",
-  "last_name": "User",
-  "date_of_birth": "1980-01-01T00:00:00Z"
+  "username": "aasdas",
+  "email": "newuser123example.com",
+  "password": "troAngassword!123",
+  "dateOfBirth": "1995-10-26T00:00:00Z"
 }
 
----
-
-### Test Case 12: Error - Invalid First Name Format
-PUT http://{{host}}/api/user
+### Test Case 13: Invalid email max length for rfc complience
+POST http://{{host}}/api/user
 Content-Type: application/json
 
 {
-  "username": "invalidfirstname",
-  "email": "invalid.first@example.com",
-  "password_hash": "ValidPassword!123",
-  "first_name": "John123",
-  "last_name": "Doe",
-  "date_of_birth": "1980-01-01T00:00:00Z"
+  "username": "aasdas",
+  "email": "Thisisateststraaaaaaaaaasssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaingforlengthvaliasdasdasdaaaaaasssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssdationpurposes.Itcontainsmanymorecharacters.asdasdasdasdasdasdasdasdasdasdsdadasdasdasdasd.asdasdasdasdasdasdasdasd.asdasdasdasdasdasdasdasdasdasd.asdasdasdasdasdasdasdasd.asdasdasdasdasdasdasdasdasdasd.asdasdasdasdasdasd@asd.du",
+  "password": "troAngassword!123",
+  "dateOfBirth": "1995-10-26T00:00:00Z"
 }
 
----
-
-### Test Case 13: Error - Invalid Last Name Format
-# Assuming your ValidateName does not allow numbers or special characters.
-PUT http://{{host}}/api/user
+### Test Case 14: Invalid password too short
+POST http://{{host}}/api/user
 Content-Type: application/json
 
 {
-  "username": "invalidlastname",
-  "email": "invalid.last@example.com",
-  "password_hash": "ValidPassword!123",
-  "first_name": "John",
-  "last_name": "Doe#",
-  "date_of_birth": "1980-01-01T00:00:00Z"
+  "username": "asdasda",
+  "email": "newuser123@example.com",
+  "password": "!123",
+  "dateOfBirth": "1995-10-26T00:00:00Z"
 }
 
----
-
-### Test Case 14: Error - Email Already Exists (Unique Constraint Violation)
-# Use an email address that you know already exists in your database.
-PUT http://{{host}}/api/user
+### Test Case 14: Invalid password too long
+POST http://{{host}}/api/user
 Content-Type: application/json
 
 {
-  "username": "existingemailuser",
-  "email": "existing.user@example.com",
-  "password_hash": "ValidPassword!123",
-  "first_name": "Conflict",
-  "last_name": "User",
-  "date_of_birth": "1980-01-01T00:00:00Z"
+  "username": "asdasda",
+  "email": "newuser123@example.com",
+  "password": "!123aasdsssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssasdA",
+  "dateOfBirth": "1995-10-26T00:00:00Z"
 }
 
----
-
-### Test Case 15: Error - Invalid JSON Data (Malformed)
-PUT http://{{host}}/api/user
+### Test Case 14: Invalid password format
+POST http://{{host}}/api/user
 Content-Type: application/json
 
 {
-  "username": "malformedjson",
-  "email": "malformed@example.com",
-  "password_hash": "Password123!",
-  "first_name": "Test"
-  "last_name": "Error" // Missing comma here
+  "username": "asdasda",
+  "email": "newuser123@example.com",
+  "password": "!123aasdsssssssssssssssssssssssssssssssssssssssasd",
+  "dateOfBirth": "1995-10-26T00:00:00Z"
 }
+
+### Test Case 15: Invalid dob
+POST http://{{host}}/api/user
+Content-Type: application/json
+
+{
+  "username": "aasdasd",
+  "email": "newuser123@example.com",
+  "password": "troAngassword!123",
+  "dateOfBirth": "2022-10-26T00:00:00Z"
+}
+
+### Test Case 16: Missing required key username
+POST http://{{host}}/api/user
+Content-Type: application/json
+
+{
+  "email": "newuser123@example.com",
+  "password": "troAngassword!123",
+  "dateOfBirth": "1995-10-26T00:00:00Z"
+}
+
+### Test Case 17: Missing required key email
+POST http://{{host}}/api/user
+Content-Type: application/json
+
+{
+  "username": "aasdasd",
+  "password": "troAngassword!123",
+  "dateOfBirth": "1995-10-26T00:00:00Z"
+}
+
+
+### Test Case 18: Missing required key password
+POST http://{{host}}/api/user
+Content-Type: application/json
+
+{
+  "username": "aasdasd",
+  "email": "newuser123@example.com",
+  "dateOfBirth": "1995-10-26T00:00:00Z"
+}
+
+### Test Case 19: Missing required key dob
+POST http://{{host}}/api/user
+Content-Type: application/json
+
+{
+  "username": "aasdasd",
+  "email": "newuser123@example.com",
+  "password": "troAngassword!123"
+}
+
+
+### Test Case 20 exatly 18 years old from the test
+POST http://{{host}}/api/user
+Content-Type: application/json
+
+{
+  "username": "minageuser",
+  "email": "minage@example.com",
+  "password": "troAngassword!123",
+  "dateOfBirth": "2009-07-07T00:00:00Z" 
+}
+
+### Test Case 20 not 16 years old
+POST http://{{host}}/api/user
+Content-Type: application/json
+
+{
+  "username": "one_day_younger",
+  "email": "onedayyounger@example.com",
+  "password": "troAngassword!123",
+  "dateOfBirth": "2009-07-9T00:00:00Z"
+}
+
+
+

@@ -11,6 +11,6 @@ type ServerUserConnect struct {
 	UserID   uuid.UUID `gorm:"not null;type:uuid;primaryKey;autoIncrement:false"`
 
 	// Relations
-	Server Server `gorm:"foreignKey:ServerID"` // Relation: Connects to the server
-	User   User   `gorm:"foreignKey:UserID"`   // Relation: Connects to the user
+	Server Server   `gorm:"foreignKey:ServerID"` // Relation: Connects to the server
+	User   UserGorm `gorm:"foreignKey:UserID"`   // Relation: Connects to the user
 }
