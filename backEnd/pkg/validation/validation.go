@@ -242,7 +242,7 @@ func (v *Validator) ValidateRequestBody(dto interface{}, request *http.Request) 
 //   - *models.CustomError: A CustomError if validation fails, nil otherwise.
 func (v *Validator) ValidateDto(dto interface{}) *models.CustomError {
 	// Attempt to validate the DTO using the underlying validation library.
-	if err := v.ValidateStruct(dto); err != nil {
+	if err := v.validator.Struct(dto); err != nil {
 		// Differentiate between validation errors and other unexpected errors.
 		if validationErrors, ok := err.(validator.ValidationErrors); ok {
 			// Pre-allocate slice capacity to optimize for common validation scenarios,

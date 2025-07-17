@@ -5,7 +5,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/413ksz/BlueFox/backEnd/domain/users"
 	"github.com/413ksz/BlueFox/backEnd/pkg/models"
 	"github.com/rs/zerolog/log"
 	"gorm.io/driver/postgres"
@@ -191,14 +190,14 @@ func Migrate(db *gorm.DB, isFullMigration bool) {
 			Str("event", "migration_full_data_loss_warning").
 			Msg("Performing full migration: Dropping all specified tables. DATA LOSS WILL OCCUR!")
 		db.Migrator().DropTable(
-			&users.User{},
-			&models.Message{},
-			&models.UserFriendConnect{},
-			&models.Server{},
-			&models.Channel{},
-			&models.ServerUserConnect{},
-			&models.MediaAsset{},
 			&models.MessageAttachment{},
+			&models.ServerUserConnect{},
+			&models.UserFriendConnect{},
+			&models.Message{},
+			&models.Channel{},
+			&models.Server{},
+			&models.MediaAsset{},
+			&models.UserGorm{},
 			// Add any new top-level models here.
 		)
 		log.Info().
@@ -207,13 +206,13 @@ func Migrate(db *gorm.DB, isFullMigration bool) {
 			Msg("All specified tables dropped for full migration.")
 	}
 	err := db.AutoMigrate(
-		&users.User{},
-		&models.Message{},
-		&models.UserFriendConnect{},
+		&models.UserGorm{},
+		&models.MediaAsset{},
 		&models.Server{},
 		&models.Channel{},
+		&models.Message{},
+		&models.UserFriendConnect{},
 		&models.ServerUserConnect{},
-		&models.MediaAsset{},
 		&models.MessageAttachment{},
 		// Add any new top-level models here.
 	)

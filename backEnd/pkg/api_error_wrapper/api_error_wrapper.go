@@ -46,8 +46,8 @@ func ErrorWrapper[T any](handler AppHandler[T], componentName string) http.Handl
 		// The apiResponse check is added to avoid a panic when the apiResponse is nil because we work with pointers
 		if customError != nil && apiResponse != nil {
 
+			// Log the error based on the custom error's log level
 			logEvent := logging.LogLevelHelperForError(customError)
-
 			logEvent.
 				Str("request_id", requestId).
 				Str("method", r.Method).

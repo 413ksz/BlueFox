@@ -1,7 +1,6 @@
 package models
 
 import (
-	"os/user"
 	"time"
 
 	"github.com/google/uuid"
@@ -21,8 +20,8 @@ type MediaAsset struct {
 	UploadedByUserID *uuid.UUID `gorm:"type:uuid"` // Optional: Track who uploaded it
 
 	// Relations
-	UploadedByUser      *user.User          `gorm:"foreignKey:UploadedByUserID"`      // Relation: A media asset can be uploaded by a user
+	UploadedByUser      *UserGorm           `gorm:"foreignKey:UploadedByUserID"`      // Relation: A media asset can be uploaded by a user
 	MessageAttachments  []MessageAttachment `gorm:"foreignKey:MediaAssetID"`          // Relation: A media asset can be part of many message attachments
-	UserProfilePictures []user.User         `gorm:"foreignKey:ProfilePictureAssetID"` // Relation: A media asset can be a profile picture for multiple users
+	UserProfilePictures []UserGorm          `gorm:"foreignKey:ProfilePictureAssetID"` // Relation: A media asset can be a profile picture for multiple users
 	ServerIcons         []Server            `gorm:"foreignKey:IconAssetID"`           // Relation: A media asset can be an icon for multiple servers
 }

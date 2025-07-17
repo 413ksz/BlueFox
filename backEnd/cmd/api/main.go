@@ -7,11 +7,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/413ksz/BlueFox/backEnd/domain/users"
-	"github.com/413ksz/BlueFox/backEnd/pkg/aggregator"
 	"github.com/413ksz/BlueFox/backEnd/pkg/database"
-	"github.com/413ksz/BlueFox/backEnd/pkg/router"
-	"github.com/413ksz/BlueFox/backEnd/pkg/validation"
+	"github.com/413ksz/BlueFox/backEnd/user_menagment/domain/validation"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 	"github.com/rs/zerolog"
@@ -80,7 +77,7 @@ func init() {
 	validator := validation.NewValidator()
 
 	// Register the custom validation functions for the users domain
-	users.RegisterDomainValidators(validator)
+	validation.RegisterDomainValidators(validator)
 
 	log.Info().
 		Str("component", "main_app").
@@ -90,15 +87,9 @@ func init() {
 	// --- API Routes ---
 	// Initialize the API router
 
-	userRepo := users.NewUserRepository(database.DB)
-	userService := users.NewUserService(userRepo)
-	userHandler := users.NewUserHandler(userService, validator)
-
-	handlers := aggregator.NewHandlerAggregator(*userHandler)
-
 	appRouter = mux.NewRouter()
 	// Register the API routes
-	router.RegisterRoutes(appRouter, *handlers)
+	RegisterUserRoutes(appRouter, NewUserHandler())
 
 	log.Info().
 		Str("component", "main_app").
