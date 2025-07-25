@@ -37,7 +37,7 @@ type UserGorm struct {
 }
 
 func (*UserGorm) TableName() string {
-	return "users"
+	return "user"
 }
 
 // MediaAsset table gorm model
@@ -55,7 +55,7 @@ type MediaAssetGorm struct {
 }
 
 func (*MediaAssetGorm) TableName() string {
-	return "media_assets"
+	return "media_asset"
 }
 
 // UserFriendConnect table gorm model
@@ -75,7 +75,7 @@ type UserFriendConnectGorm struct {
 }
 
 func (*UserFriendConnectGorm) TableName() string {
-	return "user_friend_connects"
+	return "user_friend_connect"
 }
 
 // MessageGorm table gorm model
@@ -98,7 +98,7 @@ type MessageGorm struct {
 }
 
 func (*MessageGorm) TableName() string {
-	return "messages"
+	return "message"
 }
 
 // ServerGorm table gorm model
@@ -118,7 +118,7 @@ type ServerGorm struct {
 }
 
 func (*ServerGorm) TableName() string {
-	return "servers"
+	return "server"
 }
 
 // ServerUserConnectGorm table gorm model
@@ -133,7 +133,7 @@ type ServerUserConnectGorm struct {
 }
 
 func (*ServerUserConnectGorm) TableName() string {
-	return "server_user_connects"
+	return "server_user_connect"
 }
 
 // Enums for gorm models

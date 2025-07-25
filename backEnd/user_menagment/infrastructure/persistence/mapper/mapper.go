@@ -24,11 +24,11 @@ func ToUserGorm(user *domain.User) *gorm.UserGorm {
 		LastOnline:   user.LastOnline,
 		Bio:          user.Bio,
 		Location:     user.Location,
-		IsVerified:   user.IsVerified.Bool(),
+		IsVerified:   user.IsVerified,
 	}
 }
 
 func ToUserDomain(user *gorm.UserGorm) (*domain.User, *models.CustomError) {
-	domain, domainErr := domain.NewUser(user.Username, user.Email, user.PasswordHash, user.DateOfBirth
+	domain, domainErr := domain.NewUser(user.Username, user.Email, user.PasswordHash, user.DateOfBirth)
 	return domain, domainErr
 }

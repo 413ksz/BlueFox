@@ -10,12 +10,30 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type ValidationErrorDetail struct {
-	Field   string `json:"field"`
-	Tag     string `json:"tag"`
-	Value   any    `json:"value,omitempty"`
-	Param   string `json:"param,omitempty"`
-	Message string `json:"message,omitempty"`
+// ValidationErrors is a struct that encapsulates a list of validation errors.
+type ValidationErrors struct {
+	Errors []ValidationError `json:"details"`
+}
+
+// NewValidationErrors creates and returns a new ValidationErrors object.
+func NewValidationErrors() *ValidationErrors {
+	return &ValidationErrors{
+		Errors: []ValidationError{},
+	}
+}
+
+// AddNewError adds a new validation error to the list of errors.
+// it assumes that the validation error can't be nil.
+func (v *ValidationErrors) AddNewError(validationError ValidationError) {
+	v.Errors = append(v.Errors, validationError)
+}
+
+// Len returns the number of validation errors in the list.
+func (v *ValidationErrors) Len() int {
+	if v.Errors == nil {
+		return 0
+	}
+	return len(v.Errors)
 }
 
 // ValidationError is a struct that encapsulates a single validation error.
@@ -52,7 +70,10 @@ const (
 	ERROR_CODE_JSON_SYNTAX          ErrorCode = "JSON_SYNTAX_ERROR"
 	ERROR_CODE_JSON_TYPE_MISMATCH   ErrorCode = "JSON_MISMATCH_ERROR"
 	ERROR_CODE_JSON_UKNOWN_FIELD    ErrorCode = "JSON_UNKNOWN_FIELD_ERROR"
-	ERROR_CODE_UNPROCESSABLE_ENTITY ErrorCode = "UNPROCESSABLE_ENTITY"
+	ERROR_CODE_JSON_EMPTY           ErrorCode = "JSON_EMPTY_ERROR"
+	ERROR_CODE_UNPROCESSABLE_ENTITY ErrorCode = "UNPROCESSABLE_ENTITY_ERROR"
+	ERROR_CODE_CONFLICT             ErrorCode = "CONFLICT_ERROR"
+	ERROR_CODE_UNAUTHORIZED         ErrorCode = "UNAUTHORIZED_ERROR"
 	ERROR_CODE_INTERNAL_SERVER      ErrorCode = "INTERNAL_SERVER_ERROR"
 )
 
@@ -66,6 +87,10 @@ type CustomError struct {
 	LogLevel   zerolog.Level `json:"-"`
 	Err        *error        `json:"-"`
 	StackTrace *string       `json:"-"`
+}
+
+func (e *CustomError) Error() string {
+	return e.Message
 }
 
 // NewCustomError creates and returns a new CustomError pointer.
@@ -84,14 +109,16 @@ type CustomError struct {
 //
 // Returns:
 // - *CustomError: A pointer to the newly created CustomError object.
-func NewCustomError(code ErrorCode, originalError *error, details any, stackTrace *string) *CustomError {
-	var customError CustomError
+func NewCustomError(code ErrorCode, details any, originalError *error, stackTrace *string) *CustomError {
 
+	// ---------- Initialize New CustomError ----------
+	var customError CustomError
 	customError.Code = code
 	customError.Err = originalError
-	customError.Details = details
 	customError.StackTrace = stackTrace
+	customError.Details = details
 
+	// Set http code, log level, and message based on the provided ErrorCode
 	switch code {
 	case ERROR_CODE_BAD_REQUEST:
 		customError.HttpCode = http.StatusBadRequest
@@ -113,6 +140,18 @@ func NewCustomError(code ErrorCode, originalError *error, details any, stackTrac
 		customError.HttpCode = http.StatusBadRequest
 		customError.LogLevel = zerolog.WarnLevel
 		customError.Message = "The request body contains an unknown field."
+	case ERROR_CODE_JSON_EMPTY:
+		customError.HttpCode = http.StatusBadRequest
+		customError.LogLevel = zerolog.WarnLevel
+		customError.Message = "The request body is empty."
+	case ERROR_CODE_CONFLICT:
+		customError.HttpCode = http.StatusConflict
+		customError.LogLevel = zerolog.WarnLevel
+		customError.Message = "The request conflicts with an existing resource."
+	case ERROR_CODE_UNAUTHORIZED:
+		customError.HttpCode = http.StatusUnauthorized
+		customError.LogLevel = zerolog.WarnLevel
+		customError.Message = "The request requires authentication."
 	case ERROR_CODE_INTERNAL_SERVER:
 		customError.HttpCode = http.StatusInternalServerError
 		customError.LogLevel = zerolog.ErrorLevel
@@ -124,6 +163,10 @@ func NewCustomError(code ErrorCode, originalError *error, details any, stackTrac
 	}
 
 	return &customError
+}
+
+func (e *ErrorCode) String() string {
+	return string(*e)
 }
 
 // Pagination is a struct that encapsulates pagination information for API responses.

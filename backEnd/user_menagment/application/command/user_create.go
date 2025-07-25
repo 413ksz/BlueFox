@@ -1,10 +1,12 @@
 package command
 
-import "time"
+import (
+	valueobject "github.com/413ksz/BlueFox/backEnd/user_menagment/shared/value_object"
+)
 
 type UserCreateCommand struct {
-	Username    string
-	Email       string
-	Password    string
-	DateOfBirth time.Time
+	Username    valueobject.Username
+	Email       valueobject.Email
+	Password    valueobject.Password
+	DateOfBirth valueobject.DateOfBirth
 }

@@ -10,14 +10,12 @@ import (
 
 // UserHandler encapsulates the logic for handling user-related operations.
 type UserHandler struct {
-	Validator   *validation.Validator
 	UserService service.UserService
 }
 
 // NewUserHandler creates a new UserHandler instance.
-func NewUserHandler(userService service.UserService, validator *validation.Validator) *UserHandler {
+func NewUserHandler(userService service.UserService) *UserHandler {
 	return &UserHandler{
-		Validator:   validator,
 		UserService: userService,
 	}
 }
@@ -37,27 +35,24 @@ func (userHandler *UserHandler) UserCreateHandler(w http.ResponseWriter, r *http
 	var dto UserCreateRequestDTO
 
 	// Validate the request body and unmarshal it into the DTO
-	customError := userHandler.Validator.ValidateRequestBody(&dto, r)
-	if customError != nil {
-		apiResponse.WithError(customError.Message, customError, customError.HttpCode)
-		return apiResponse, customError
-	}
-
-	// Validate the input values of the DTO
-	customError = userHandler.Validator.ValidateDto(&dto)
-	if customError != nil {
-		apiResponse.WithError(customError.Message, customError, customError.HttpCode)
-		return apiResponse, customError
+	jsonParseError := validation.ValidateRequestBody(&dto, r)
+	if jsonParseError != nil {
+		apiResponse.WithError(jsonParseError.Message, jsonParseError, jsonParseError.HttpCode)
+		return apiResponse, jsonParseError
 	}
 
 	// Convert the DTO to a CreateUserCommand
-	command := dto.ToCreateUserCommand()
+	command, validationError := dto.ToCreateUserCommand()
+	if validationError != nil {
+		apiResponse.WithError(validationError.Message, validationError, validationError.HttpCode)
+		return apiResponse, validationError
+	}
 
 	// Call the service layer to create the user
-	customError = userHandler.UserService.CreateUser(command)
-	if customError != nil {
-		apiResponse.WithError(customError.Message, customError, customError.HttpCode)
-		return apiResponse, customError
+	createError := userHandler.UserService.CreateUser(command)
+	if createError != nil {
+		apiResponse.WithError(createError.Message, createError, createError.HttpCode)
+		return apiResponse, createError
 	}
 
 	// Return a success response

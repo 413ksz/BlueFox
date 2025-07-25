@@ -1,7 +1,6 @@
 package databaseerrorhelper
 
 import (
-	"github.com/413ksz/BlueFox/backEnd/pkg/apierrors"
 	"github.com/413ksz/BlueFox/backEnd/pkg/models"
 	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
@@ -15,17 +14,17 @@ func GetDatabaseErrorMessage(result *gorm.DB) *models.CustomError {
 			if pgErr.Code == "23505" {
 				// Handle specific unique constraint violations
 				if pgErr.ConstraintName == "uni_users_email" {
-					customError := apierrors.ERROR_CODE_UNIQUE_KEY_VIOLATION.NewApiError("A user with the same email already exists", result.Error)
+					customError := models.NewCustomError(models.ERROR_CODE_CONFLICT, "A user with similar email already exists", &result.Error, nil)
 					return customError
 				}
 				// Fallback for any other unique constraint violation not specifically handled
-				customError := apierrors.ERROR_CODE_UNIQUE_KEY_VIOLATION.NewApiError("A user with similar details already exists", result.Error)
+				customError := models.NewCustomError(models.ERROR_CODE_CONFLICT, "An unspecific unique constraint violation occurred", &result.Error, nil)
 				return customError
 			}
 		}
 
 		// Fallback for any other database errors (e.g., connection issues, other integrity errors)
-		customError := apierrors.ERROR_CODE_INTERNAL_SERVER.NewApiError("An unexpected database error occurred creating the entity", result.Error)
+		customError := models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "An unspecific database error occurred", &result.Error, nil)
 		return customError
 	}
 

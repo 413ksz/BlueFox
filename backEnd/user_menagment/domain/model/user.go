@@ -67,7 +67,7 @@ func NewUser(username string, email string, passwordHash string, dateOfBirth tim
 
 	// check if there are any validation errors
 	if len(errors) > 0 {
-		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, nil, errors, nil)
+		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, errors, nil, nil)
 	}
 
 	// ------- Create User --------

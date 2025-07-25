@@ -6,19 +6,7 @@ import (
 	"unicode"
 
 	"github.com/413ksz/BlueFox/backEnd/pkg/models"
-	"github.com/413ksz/BlueFox/backEnd/pkg/validation"
-	"github.com/go-playground/validator/v10"
 )
-
-// ValidateUsernameField checks if the provided username string matches the USERNAME_PATTERN.
-// It returns true if valid, false otherwise.
-// Parameters:
-// - fieldLevel: The validator.FieldLevel containing the username string to validate.
-// Returns:
-// - bool: True if the username is valid, false otherwise.
-func ValidateUsernameField(fieldLevel validator.FieldLevel) bool {
-	return usernameRegex.MatchString(fieldLevel.Field().String())
-}
 
 // ValidateUsernameString checks if the provided username string matches the username validation rules.
 // It returns a ValidationError if the username is invalid, nil otherwise.
@@ -50,18 +38,6 @@ func ValidateUsernameString(username string) *models.ValidationError {
 	return nil
 }
 
-// ValidateEmailField checks if the provided email field string matches the EMAIL_PATTERN.
-// It uses the validator.FieldLevel to access the email field value.
-// Therefore, it should be called on dtos that have validation tags like `validate:"email"`
-// It returns true if valid, false otherwise.
-// Parameters:
-// - fieldLevel: The validator.FieldLevel containing the email string to validate.
-// Returns:
-// - bool: True if the email is valid, false otherwise.
-func ValidateEmailField(fieldLevel validator.FieldLevel) bool {
-	return emailRegex.MatchString(fieldLevel.Field().String())
-}
-
 // ValidateEmailString checks if the provided email string matches the email validation rules.
 // It returns a ValidationError if the email is invalid, nil otherwise.
 // Parameters:
@@ -86,22 +62,6 @@ func ValidateEmailString(email string) *models.ValidationError {
 	}
 
 	return nil
-}
-
-// ValidatePasswordField checks if the provided password string meets all defined criteria.
-// It uses logical AND (&&) to ensure the password matches all individual regex patterns
-// for length, uppercase, lowercase, numbers, and special characters.
-// It returns true if all criteria are met, false otherwise.
-// Parameters:
-// - fieldLevel: The validator.FieldLevel containing the password string to validate.
-// Returns:
-// - bool: True if the password is valid, false otherwise.
-func ValidatePasswordField(fieldLevel validator.FieldLevel) bool {
-	password := fieldLevel.Field().String()
-	return passwordUppercaseRegex.MatchString(password) &&
-		passwordLowercaseRegex.MatchString(password) &&
-		passwordNumberRegex.MatchString(password) &&
-		passwordSpecialRegex.MatchString(password)
 }
 
 // ValidatePasswordForEntropy checks if the provided password string meets all defined criteria.
@@ -235,17 +195,6 @@ func ValidatePasswordHash(passwordHash string) *models.ValidationError {
 	return nil
 }
 
-// ValidateNameField checks if a provided name string (e.g., first name or last name)
-// matches the NAME_PATTERN.
-// It returns true if valid, false otherwise.
-// Parameters:
-// - fieldLevel: The validator.FieldLevel containing the name string to validate.
-// Returns:
-// - bool: True if the name is valid, false otherwise.
-func ValidateNameField(fieldLevel validator.FieldLevel) bool {
-	return nameRegex.MatchString(fieldLevel.Field().String())
-}
-
 // ValidateNameString checks if a provided name string (e.g., first name or last name)
 // matches the validation rules.
 // It returns a ValidationError if the name is invalid, nil otherwise.
@@ -271,39 +220,6 @@ func ValidateNameString(name string) *models.ValidationError {
 		return validationError
 	}
 	return nil
-}
-
-// ValidateDateOfBirthField checks if a provided date of birth is valid.
-// It ensures the date of birth is in the past and within the age range of 16 to 120.
-// It returns true if valid, false otherwise.
-// Parameters:
-// - fieldLevel: The validator.FieldLevel containing the date of birth to validate.
-// Returns:
-// - bool: True if the date of birth is valid, false otherwise.
-func ValidateDateOfBirthField(fieldLevel validator.FieldLevel) bool {
-	//we don't check here for parse error it was checked before it should always be valid
-	dateofbirth, _ := fieldLevel.Field().Interface().(time.Time)
-
-	now := time.Now()
-
-	if dateofbirth.After(now) {
-		return false
-	}
-	// Calculate the minimum(16) and maximum(120) date of birth.
-	minAge := now.AddDate(-16, 0, 0)
-	maxAge := now.AddDate(-120, 0, 0)
-
-	// Check if the date of birth is after the maximum age.
-	if dateofbirth.Before(maxAge) {
-		return false
-	}
-
-	// Check if the date of birth is before the minimum age.
-	if dateofbirth.After(minAge) {
-		return false
-	}
-
-	return true
 }
 
 // ValidateDateOfBirthTime checks if a provided date of birth is valid.
@@ -338,13 +254,4 @@ func ValidateDateOfBirthTime(dateOfBirth time.Time) *models.ValidationError {
 	}
 
 	return nil
-}
-
-// RegisterDomainValidators registers the custom validation functions for the User struct.
-func RegisterDomainValidators(validator *validation.Validator) {
-	validator.RegisterCustomValidation("username", ValidateUsernameField)
-	validator.RegisterCustomValidation("password", ValidatePasswordField)
-	validator.RegisterCustomValidation("name", ValidateNameField)
-	validator.RegisterCustomValidation("dateofbirth", ValidateDateOfBirthField)
-	validator.RegisterCustomValidation("email", ValidateEmailField)
 }

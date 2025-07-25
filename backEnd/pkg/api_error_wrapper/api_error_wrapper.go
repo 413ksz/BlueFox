@@ -46,20 +46,24 @@ func ErrorWrapper[T any](handler AppHandler[T], componentName string) http.Handl
 		// The apiResponse check is added to avoid a panic when the apiResponse is nil because we work with pointers
 		if customError != nil && apiResponse != nil {
 
-			// Log the error based on the custom error's log level
 			logEvent := logging.LogLevelHelperForError(customError)
-			logEvent.
+			// Start building the event chain
+			event := logEvent.
 				Str("request_id", requestId).
 				Str("method", r.Method).
 				Str("path", r.URL.Path).
 				Str("component", componentName).
 				Str("status", "failed").
 				Str("event", "api_error_occurred").
-				Str("errorcode", customError.Code).
+				Str("errorcode", customError.Code.String()).
 				Str("message", customError.Message).
-				Err(customError.Err).
-				Interface("details", customError.Details).
-				Msg("Error occurred in API handler")
+				Interface("details", customError.Details)
+
+			// check if the underlying error is not nil
+			if customError.Err != nil && *customError.Err != nil {
+				event = event.Err(*customError.Err)
+			}
+			event.Msg("Error occurred in API handler")
 			models.SendApiResponse(r, w, apiResponse, requestId, componentName)
 			return
 		}
@@ -82,8 +86,10 @@ func ErrorWrapper[T any](handler AppHandler[T], componentName string) http.Handl
 
 		// --- Scenario 3: Fallback - Unexpected Nil Responses ---
 		// This block is reached if customError is nil AND apiResponse is also nil.
+		// or just apiResponse is nil and customError is present
 		// This indicates an unexpected state where the handler neither returned a
-		// success response nor explicitly signaled an error. It's considered an internal bug.
+		// success response nor explicitly signaled an error
+		// or an error waas returned without apiResponse. It's considered an internal bug.
 		// Log the error and send a 500 Internal Server Error response.
 		// if this happen we are in deep shit
 		log.Error().

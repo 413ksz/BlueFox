@@ -1,7 +1,6 @@
 package service
 
 import (
-	"github.com/413ksz/BlueFox/backEnd/pkg/apierrors"
 	"github.com/413ksz/BlueFox/backEnd/pkg/models"
 	passwordHashing "github.com/413ksz/BlueFox/backEnd/pkg/password_hashing"
 	"github.com/413ksz/BlueFox/backEnd/user_menagment/application/command"
@@ -31,15 +30,15 @@ func NewUserService(userRepo repository.UserRepository) *UserServiceImpl {
 func (s *UserServiceImpl) CreateUser(command command.UserCreateCommand) *models.CustomError {
 
 	// Hash the password and check for errors
-	passwordHash, err := passwordHashing.HashPassword(command.Password)
+	passwordHash, err := passwordHashing.HashPassword(command.Password.String())
 	if err != nil {
-		customError := apierrors.ERROR_CODE_INTERNAL_SERVER.NewApiError("error hashing password", err)
+		customError := models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "error hashing password", &err, nil)
 		return customError
 	}
 
 	// Create a new User(domain) instance from the command and hash the password
 	// pointer receiver
-	user, domainErr := model.NewUser(command.Username, command.Email, passwordHash, command.DateOfBirth)
+	user, domainErr := model.NewUser(command.Username.String(), command.Email.String(), passwordHash, command.DateOfBirth.Time())
 	if domainErr != nil {
 		return domainErr
 	}
