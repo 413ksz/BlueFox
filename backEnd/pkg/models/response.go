@@ -75,6 +75,7 @@ const (
 	ERROR_CODE_CONFLICT             ErrorCode = "CONFLICT_ERROR"
 	ERROR_CODE_UNAUTHORIZED         ErrorCode = "UNAUTHORIZED_ERROR"
 	ERROR_CODE_INTERNAL_SERVER      ErrorCode = "INTERNAL_SERVER_ERROR"
+	ERROR_CODE_EXTERNAL_SERVER      ErrorCode = "EXTERNAL_SERVER_ERROR"
 )
 
 // CustomError is a struct that encapsulates detailed custom API error information.
@@ -156,6 +157,10 @@ func NewCustomError(code ErrorCode, details any, originalError *error, stackTrac
 		customError.HttpCode = http.StatusInternalServerError
 		customError.LogLevel = zerolog.ErrorLevel
 		customError.Message = "An internal server error occurred."
+	case ERROR_CODE_EXTERNAL_SERVER:
+		customError.HttpCode = http.StatusInternalServerError
+		customError.LogLevel = zerolog.ErrorLevel
+		customError.Message = "An external server error occurred."
 	default:
 		customError.HttpCode = http.StatusInternalServerError
 		customError.LogLevel = zerolog.ErrorLevel
