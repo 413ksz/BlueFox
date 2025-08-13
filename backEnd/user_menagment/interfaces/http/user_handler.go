@@ -35,7 +35,7 @@ func (userHandler *UserHandler) UserCreateHandler(w http.ResponseWriter, r *http
 	var dto UserCreateRequestDTO
 
 	// Validate the request body and unmarshal it into the DTO
-	jsonParseError := validation.ValidateRequestBody(&dto, r)
+	jsonParseError := validation.ValidateRequestBody(&dto, r, 0)
 	if jsonParseError != nil {
 		apiResponse.WithError(jsonParseError.Message, jsonParseError, jsonParseError.HttpCode)
 		return apiResponse, jsonParseError

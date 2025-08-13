@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/413ksz/BlueFox/backEnd/pkg/apierrors"
 	"github.com/413ksz/BlueFox/backEnd/pkg/models"
 	jwt_token "github.com/413ksz/BlueFox/backEnd/pkg/token"
 	"github.com/golang-jwt/jwt/v5"

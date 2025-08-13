@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/413ksz/BlueFox/backEnd/pkg/database"
-	"github.com/413ksz/BlueFox/backEnd/user_menagment/domain/validation"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 	"github.com/rs/zerolog"
@@ -65,24 +64,6 @@ func init() {
 		Str("component", "main_app").
 		Str("event", "app_db_init_success").
 		Msg("Global database connection successfully initialized.")
-
-	log.Info().
-		Str("component", "main_app").
-		Str("event", "validation_registering_start").
-		Msg("started registering validations for domains...")
-	// --- Domain Validation ---
-	// Register custom validation functions for the domains
-
-	// Create a new instance of the Validator
-	validator := validation.NewValidator()
-
-	// Register the custom validation functions for the users domain
-	validation.RegisterDomainValidators(validator)
-
-	log.Info().
-		Str("component", "main_app").
-		Str("event", "validation_registering_finished").
-		Msg("finished registering validations for domains...")
 
 	// --- API Routes ---
 	// Initialize the API router

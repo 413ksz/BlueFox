@@ -67,10 +67,20 @@ func ValidateEmailString(email string) *models.ValidationError {
 // ValidatePasswordForEntropy checks if the provided password string meets all defined criteria.
 // It uses Shannon entropy to check the relative password strength of 100 bits of entropy.
 // It also checks if the password length is between 16 and 72 characters.
-// parameters:
+//
+// Parameters:
 // - password: the password string to validate
-// returns:
+//
+// Returns:
 // - *ValidationError: a ValidationError if the password is invalid, nil otherwise
+//
+// Example:
+// password := "password123"
+// validationError := validation.ValidatePasswordForEntropy(password)
+//
+//	if validationError != nil {
+//	    return validationError
+//	}
 func ValidatePasswordForEntropy(password string) *models.ValidationError {
 
 	// ---------- Password Length Validation ----------
