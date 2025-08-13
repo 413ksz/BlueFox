@@ -6,6 +6,7 @@ import (
 	"github.com/413ksz/BlueFox/backEnd/user_menagment/application/command"
 	"github.com/413ksz/BlueFox/backEnd/user_menagment/domain/model"
 	"github.com/413ksz/BlueFox/backEnd/user_menagment/domain/repository"
+	"github.com/413ksz/BlueFox/backEnd/user_menagment/shared/validation"
 
 	"github.com/google/uuid"
 )
@@ -18,34 +19,57 @@ type UserService interface {
 }
 
 type UserServiceImpl struct {
-	userRepo repository.UserRepository
+	userRepo      repository.UserRepository
+	pwnedPassword *validation.PwnedPassword
 }
 
-func NewUserService(userRepo repository.UserRepository) *UserServiceImpl {
+func NewUserService(userRepo repository.UserRepository, pwnedPassword *validation.PwnedPassword) *UserServiceImpl {
 	return &UserServiceImpl{
-		userRepo: userRepo,
+		userRepo:      userRepo,
+		pwnedPassword: pwnedPassword,
 	}
 }
 
+// CreateUser creates a new user based on the provided command.
+//
+// Functionality:
+// 1. HIBP Check: Verifies if the password has been exposed in a data breach using the HIBP API. If compromised, an error is returned.
+// 2. Password Hashing: Securely hashes the password for storage in the database.
+// 3. User Creation: Creates the user domain model.
+// 4. User Repository: Persists the user data in the repository.
+//
+// Parameters:
+// - command: The command containing the necessary data to create a new user.
+//
+// Returns:
+//   - *models.CustomError: An error if the operation fails, otherwise nil.
+//
+// Error Conditions:
+//   - External dependency error: An error occurs with the Pwned Passwords API (e.g., request timeout).
+//   - Internal server error: An error occurs during a critical operation (e.g., failed to hash password).
+//
+// Example:
+//  err := userHandler.UserService.CreateUser(command)
+//  if err != nil {
+//      return err
+//  }
 func (s *UserServiceImpl) CreateUser(command command.UserCreateCommand) *models.CustomError {
 
-	// Hash the password and check for errors
-	passwordHash, err := passwordHashing.HashPassword(command.Password.String())
-	if err != nil {
-		customError := models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "error hashing password", &err, nil)
-		return customError
+	if err := s.pwnedPassword.CheckPasswordBreach(command.Password.String()); err != nil {
+		return err
 	}
 
-	// Create a new User(domain) instance from the command and hash the password
-	// pointer receiver
+	passwordHash, hashingErr := passwordHashing.HashPassword(command.Password.String())
+	if hashingErr != nil {
+		return hashingErr
+	}
+
 	user, domainErr := model.NewUser(command.Username.String(), command.Email.String(), passwordHash, command.DateOfBirth.Time())
 	if domainErr != nil {
 		return domainErr
 	}
 
-	// Call the repository layer to create the user and check for errors
-	repoError := s.userRepo.Create(user)
-	if repoError != nil {
+	if repoError := s.userRepo.Create(user); repoError != nil {
 		return repoError
 	}
 

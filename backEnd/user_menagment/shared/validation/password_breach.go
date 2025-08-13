@@ -3,6 +3,7 @@ package validation
 import (
 	"bufio"
 	"context"
+	"crypto/sha1"
 	"fmt"
 	"net/http"
 	"os"
@@ -28,20 +29,68 @@ func NewPwnedPassword(client Doer) *PwnedPassword {
 	return &PwnedPassword{client: client}
 }
 
-// GetPwnedPasswordHashes retrieves the map of hashes and their occurrence counts that match the given SHA-1 hash prefix.
-// It queries the Pwned Passwords API for the provided identifier (first 5 characters of a SHA-1 hash)
-// and returns a map where the keys are hash suffixes and the values are occurrence counts.
-// If the API call fails or encounters any error, it returns a CustomError.
+// CheckPasswordBreach checks if a password has been exposed in a data breach using the Pwned Passwords API.
+//
+// Functionality:
+//  1. Prefix and Suffix Generation: Generates the prefix and suffix of the SHA-1 hash of the password.
+//  2. Get Pwned Password Hashes: Retrieves the count of times a password has been exposed in a data breach using the Pwned Passwords API.
 //
 // Parameters:
-// - identifier: A string representing the first 5 characters of a SHA-1 password hash.
+//   - password: The password to check.
 //
 // Returns:
-// - map[string]int: A map of hash suffixes to their occurrence counts.
-// - *models.CustomError: A CustomError if any error occurs during the API call or response processing.
+//   - *models.CustomError: An error if the operation fails, otherwise nil.
+//
+// Error Conditions:
+//   - if an error occurs with the Pwned Passwords API (e.g., request timeout).
+//
+// Example:
+//
+//	password := "password123"
+//	err := pwnedPassword.CheckPasswordBreach(password)
+//	if err != nil {
+//		return err
+//	}
+func (p *PwnedPassword) CheckPasswordBreach(password string) *models.CustomError {
+	prefix, suffix := p.sha1Cheksum(password)
+	hashes, err := p.GetPwnedPasswordHashes(prefix)
+	if err != nil {
+		return err
+	}
+
+	if hashes[suffix] > 0 {
+		return models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Password has been exposed in a data breach", nil, nil)
+	}
+	return nil
+
+}
+
+// GetPwnedPasswordHashes retrieves the count of times a password has been exposed in a data breach using the Pwned Passwords API.
+//
+// Functionality:
+//  1. API Request: Makes an HTTP GET request to the Pwned Passwords API to retrieve the count of times a password has been exposed in a data breach.
+//  2. Response Parsing: Parses the response from the API and returns a map of password hashes to their exposure count.
+//
+// Parameters:
+//   - identifier: The first 5 characters of the SHA-1 hash of the password.
+//
+// Returns:
+//   - map[string]int: A map of password hashes to their exposure count.
+//   - *models.CustomError: An error if the operation fails, otherwise nil.
+//
+// Error Conditions:
+//   - Invalid identifier: Must be exactly 5 characters long (ERROR_CODE_BAD_REQUEST).
+//   - External dependency error: An error occurs with the Pwned Passwords API (e.g., request timeout).
+//   - Internal server error: An error occurs during a critical operation (e.g., parsing the response from the API).
+//
+// Example:
+//
+//	identifier := "CB66F"
+//	pawnedHashes, err := pwnedPassword.GetPwnedPasswordHashes(identifier)
+//	if err != nil {
+//		return err
+//	}
 func (p *PwnedPassword) GetPwnedPasswordHashes(identifier string) (map[string]int, *models.CustomError) {
-	// ---------- Build the API request ----------
-	// Add a check at the beginning of the function
 	if len(identifier) != 5 {
 		return nil, models.NewCustomError(models.ERROR_CODE_BAD_REQUEST, "Invalid identifier: must be 5 characters long", nil, nil)
 	}
@@ -51,21 +100,16 @@ func (p *PwnedPassword) GetPwnedPasswordHashes(identifier string) (map[string]in
 		apiUrl     = "https://api.pwnedpasswords.com/range/%s"
 	)
 
-	// Build the URL for the API request.
 	url := fmt.Sprintf(apiUrl, identifier)
-
-	// Create a context with a timeout for resource cleanup on timeouts.
 	ctx, cancel := context.WithTimeout(context.Background(), apiTimeout)
 	defer cancel()
 
-	// Create the API request.
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to create request for Pwned Password API", &err, nil)
 	}
 	req.Header.Set("User-Agent", userAgent)
 
-	// Make the API request.
 	resp, err := p.client.Do(req)
 	if err != nil {
 		if os.IsTimeout(err) {
@@ -73,21 +117,16 @@ func (p *PwnedPassword) GetPwnedPasswordHashes(identifier string) (map[string]in
 		}
 		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to make a request to Pwned Password API", &err, nil)
 	}
-	defer resp.Body.Close() // Close the response body when done.
+	defer resp.Body.Close()
 
-	// ---------- Process the API response ----------
-
-	// The API returns an HTTP 404 if no hashes match the prefix.
 	if resp.StatusCode == http.StatusNotFound {
 		return make(map[string]int), nil
 	}
 
-	// The API returns an HTTP 200 if the request is successful.
 	if resp.StatusCode != http.StatusOK {
 		return nil, models.NewCustomError(models.ERROR_CODE_EXTERNAL_SERVER, "Failed to get response from Pwned Password API", nil, nil)
 	}
 
-	// Read the response body line by line using a scanner.
 	scanner := bufio.NewScanner(resp.Body)
 	results := make(map[string]int)
 
@@ -95,7 +134,6 @@ func (p *PwnedPassword) GetPwnedPasswordHashes(identifier string) (map[string]in
 		line := scanner.Text()
 		parts := strings.Split(line, ":")
 
-		// The line should contain a hash suffix and a count.
 		if len(parts) == 2 {
 			hashSuffix := parts[0]
 			var count int
@@ -107,8 +145,31 @@ func (p *PwnedPassword) GetPwnedPasswordHashes(identifier string) (map[string]in
 	}
 
 	if err := scanner.Err(); err != nil {
-		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to read response from Pwned Password API", &err, nil)
+		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to scan response from Pwned Password API", &err, nil)
 	}
 
 	return results, nil
+}
+
+// sha1Cheksum generates a SHA-1 hash for the given password and returns the prefix and suffix of the hash.
+// The prefix is the first 5 characters of the hash, and the suffix is the remaining characters.
+// Functionality:
+//  1. hash password: The password is hashed using the SHA-1 algorithm.
+//  2. get prefix and suffix: The first 5 characters of the hash are extracted as the prefix and the remaining characters are extracted as the suffix.
+//
+// Parameters:
+// - password: The password to be hashed.
+//
+// Returns:
+// - string: The prefix of the SHA-1 hash.
+// - string: The suffix of the SHA-1 hash.
+// Example:
+//   - password: "password123"
+//   - prefix, suffix := PwnedPassword.sha1Cheksum(password)
+func (p *PwnedPassword) sha1Cheksum(password string) (string, string) {
+	passwordSha1 := sha1.Sum([]byte(password))
+	fullHashString := fmt.Sprintf("%X", passwordSha1)
+	prefix := fullHashString[:5]
+	suffix := fullHashString[5:]
+	return prefix, suffix
 }
