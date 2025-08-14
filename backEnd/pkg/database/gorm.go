@@ -11,10 +11,19 @@ import (
 	"gorm.io/gorm"
 )
 
-// DB is the global GORM database connection pool for the primary application operations.
-var DB *gorm.DB
+// DB encapsulates a GORM database connection pool.
+type DB struct {
+	DB *gorm.DB
+}
 
-// InitAppDB initializes and configures the global GORM database connection pool (DB)
+// NewDB creates a new DB instance with the provided GORM database connection.
+func NewDB(db *gorm.DB) *DB {
+	return &DB{
+		DB: db,
+	}
+}
+
+// NewGormDb initializes and configures the global GORM database connection pool (DB)
 // for the primary application operations.
 //
 // It retrieves the PostgreSQL connection string from the "DATABASE_URL" environment variable.
@@ -30,44 +39,41 @@ var DB *gorm.DB
 //
 //	error: An error if the "DATABASE_URL" environment variable is not set,
 //	 	or if the connection to the database fails.
-func InitAppDB() error {
-	// --- Database Configuration ---
+func NewGormDb() (*gorm.DB, *models.CustomError) {
 	log.Info().
 		Str("component", "database").
 		Str("event", "app_db_init_start").
 		Msg("Initializing global database connection")
 
-	// Retrieve the database URL from environment variables.
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
 		log.Error().
 			Str("component", "database").
 			Str("event", "app_db_env_var_missing").
 			Msg("DATABASE_URL environment variable is not set")
-		return fmt.Errorf("DATABASE_URL environment variable is not set")
+		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "DATABASE_URL environment variable is not set", nil, nil)
 	}
 
-	var err error
 	// Open a new GORM database connection using the PostgreSQL driver.
-	DB, err = gorm.Open(postgres.Open(dbURL), &gorm.Config{})
-	if err != nil {
+	dB, dbErr := gorm.Open(postgres.Open(dbURL), &gorm.Config{})
+	if dbErr != nil {
 		log.Error().
-			Err(err).
+			Err(dbErr).
 			Str("component", "database").
 			Str("event", "app_db_connect_failure").
 			Msg("Failed to connect to database")
-		return fmt.Errorf("failed to connect to database: %w", err)
+		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "failed to connect to database", &dbErr, nil)
 	}
 
 	// Get the underlying sql.DB object to configure connection pooling.
-	sqlDB, err := DB.DB()
+	sqlDB, err := dB.DB()
 	if err != nil {
 		log.Error().
 			Err(err).
 			Str("component", "database").
 			Str("event", "app_db_get_sql_db_failure").
 			Msg("Failed to get underlying SQL DB for app")
-		return fmt.Errorf("failed to get underlying SQL DB for app: %w", err)
+		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "failed to get underlying SQL DB for app", &err, nil)
 	}
 
 	// Configure the connection pool to manage database connections efficiently.
@@ -82,7 +88,7 @@ func InitAppDB() error {
 		Int("max_open_conns", 20).
 		Str("conn_max_lifetime", "1m").
 		Msg("Global application database connection established and pooled.")
-	return nil
+	return dB, nil
 }
 
 // ConnectMigrateDB establishes a dedicated GORM database connection for migration purposes.

@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// UserService is an interface for user-related operations.
 type UserService interface {
 	CreateUser(command command.UserCreateCommand) *models.CustomError
 	GetUser(id uuid.UUID) (*model.User, *models.CustomError)
@@ -18,14 +19,17 @@ type UserService interface {
 	DeleteUser(id uuid.UUID) *models.CustomError
 }
 
+// UserServiceImpl implements the UserService interface.
+// and encapsulates the business logic for user operations.
 type UserServiceImpl struct {
-	userRepo      repository.UserRepository
+	userRepo      repository.UserRepository // interface
 	pwnedPassword *validation.PwnedPassword
 }
 
+// NewUserService creates a new instance of UserServiceImpl with the provided dependencies.
 func NewUserService(userRepo repository.UserRepository, pwnedPassword *validation.PwnedPassword) *UserServiceImpl {
 	return &UserServiceImpl{
-		userRepo:      userRepo,
+		userRepo:      userRepo, // interface
 		pwnedPassword: pwnedPassword,
 	}
 }

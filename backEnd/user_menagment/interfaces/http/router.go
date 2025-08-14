@@ -7,7 +7,7 @@ import (
 
 // RegisterUserRoutes adds routes from the user handler to the given gorilla/mux router.
 // It takes the main router and the initialized UserHandler.
-func RegisterUserRoutes(r *mux.Router, userHandler UserHandler) {
+func RegisterUserRoutes(r *mux.Router, userHandler *UserHandler) {
 
 	// ------ Register User Routes ------
 

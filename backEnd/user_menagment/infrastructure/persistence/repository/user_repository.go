@@ -1,31 +1,30 @@
 package repository
 
 import (
+	"github.com/413ksz/BlueFox/backEnd/pkg/database"
 	databaseerrorhelper "github.com/413ksz/BlueFox/backEnd/pkg/database_error_helper"
 	"github.com/413ksz/BlueFox/backEnd/pkg/models"
 	"github.com/413ksz/BlueFox/backEnd/user_menagment/domain/model"
 	"github.com/413ksz/BlueFox/backEnd/user_menagment/domain/repository"
 	"github.com/413ksz/BlueFox/backEnd/user_menagment/infrastructure/persistence/mapper"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
-var _ UserRepository = (*repository.UserRepository)(nil)
+var _ repository.UserRepository = (*UserRepository)(nil)
 
 type UserRepository struct {
-	dB *gorm.DB
+	dB *database.DB
 }
 
-func NewUserRepository(db *gorm.DB) *UserRepository {
+func NewUserRepository(db *database.DB) *UserRepository {
 	return &UserRepository{
 		dB: db,
 	}
 }
 
 func (repository UserRepository) Create(user *model.User) *models.CustomError {
-	userGorm := mapper.FromUserDomain(user)
-
-	result := repository.dB.Create(&userGorm)
+	userGorm := mapper.ToUserGorm(user)
+	result := repository.dB.DB.Create(&userGorm)
 
 	databaseErr := databaseerrorhelper.GetDatabaseErrorMessage(result)
 	if databaseErr != nil {
