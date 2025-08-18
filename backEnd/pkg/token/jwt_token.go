@@ -63,12 +63,29 @@ func GenerateJWTToken(username string, id string, profilePictureAssetId string) 
 	return tokenString, nil
 }
 
-// VerifyJWTToken verifies the authenticity and validity of a JWT token.
+// VerifyJWTToken verifies and returns the claims of a JWT token.
+//
+// 1. secretKey: Get the JWT secret key from the environment variable.
+// 2. parseToken: Parse the JWT token using the secret key.
+// 3. claims: Extract the claims from the parsed token.
+// 4. return claims: Return the claims of the verified JWT token.
+//
 // params:
 // - tokenString: The JWT token string to verify.
 // returns:
-// - *models.MyClaims: The claims extracted from the token if verification is successful.
-// - error: A generic apierrors.ERROR_CODE_UNAUTHORIZED error if the token is invalid or any other error occurs during verification.
+// - *models.MyClaims: The claims of the verified JWT token.
+// - *models.CustomError: An error if the token verification fails.
+//
+// Error conditions:
+// - if the secret key is not found: JWT_SECRET_KEY environment variable not found.
+// - if the token parsing fails: Failed to parse JWT token.
+//
+// Example usage:
+//
+//	claims, err := VerifyJWTToken(tokenString)
+//	if err != nil {
+//		return err
+//	}
 func VerifyJWTToken(tokenString string) (*models.MyClaims, *models.CustomError) {
 	// Retrieve JWT_SECRET_KEY more securely from an environment variable
 	jwtSecretKeyStr := os.Getenv("JWT_SECRET_KEY")
@@ -99,26 +116,8 @@ func VerifyJWTToken(tokenString string) (*models.MyClaims, *models.CustomError) 
 			return nil, customErr
 		}
 
-		// Now, handle other specific JWT errors using errors.Is
-		if errors.Is(err, jwt.ErrTokenExpired) {
-			return nil, models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token expired", &err, nil)
-		} else if errors.Is(err, jwt.ErrTokenMalformed) {
-			return nil, models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Malformed token", &err, nil)
-		} else if errors.Is(err, jwt.ErrTokenNotValidYet) {
-			return nil, models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token not valid yet", &err, nil)
-		} else if errors.Is(err, jwt.ErrTokenSignatureInvalid) {
-			return nil, models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token signature invalid", &err, nil)
-		} else if errors.Is(err, jwt.ErrTokenInvalidAudience) {
-			return nil, models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token audience invalid", &err, nil)
-		} else if errors.Is(err, jwt.ErrTokenInvalidIssuer) {
-			return nil, models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token issuer invalid", &err, nil)
-		} else if errors.Is(err, jwt.ErrTokenInvalidId) {
-			return nil, models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token ID invalid", &err, nil)
-		}
+		return nil, JwtErrorHelper(err)
 
-		// If it's none of the above specific JWT errors, or our custom error,
-		// then it's a general token verification failure or an unexpected error.
-		return nil, models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token verification failed unexpectedly", &err, nil)
 	}
 
 	// Check if the token is valid and extract claims
@@ -128,4 +127,45 @@ func VerifyJWTToken(tokenString string) (*models.MyClaims, *models.CustomError) 
 
 	// If token is not valid or claims type assertion fails, return an error
 	return nil, models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token verification failed", nil, nil)
+}
+
+// JwtErrorHelper returns a custom error based on the given JWT error.
+// params:
+// - err: The JWT error to convert to a custom error.
+// returns:
+// - *models.CustomError: The custom error corresponding to the JWT error.
+//
+// Error conditions:
+// - jwt.ErrTokenExpired: Token expired
+// - jwt.ErrTokenMalformed: Malformed token
+// - jwt.ErrTokenNotValidYet: Token not valid yet
+// - jwt.ErrTokenSignatureInvalid: Token signature invalid
+// - jwt.ErrTokenInvalidAudience: Token audience invalid
+// - jwt.ErrTokenInvalidIssuer: Token issuer invalid
+// - jwt.ErrTokenInvalidId: Token ID invalid
+// - default: Generic error for any other JWT error
+// Example usage:
+//
+//	if err != nil {
+//		return jwtErrorHelper(err)
+//	}
+func JwtErrorHelper(err error) *models.CustomError {
+	switch err {
+	case jwt.ErrTokenExpired:
+		return models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token expired", &err, nil)
+	case jwt.ErrTokenMalformed:
+		return models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Malformed token", &err, nil)
+	case jwt.ErrTokenNotValidYet:
+		return models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token not valid yet", &err, nil)
+	case jwt.ErrTokenSignatureInvalid:
+		return models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token signature invalid", &err, nil)
+	case jwt.ErrTokenInvalidAudience:
+		return models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token audience invalid", &err, nil)
+	case jwt.ErrTokenInvalidIssuer:
+		return models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token issuer invalid", &err, nil)
+	case jwt.ErrTokenInvalidId:
+		return models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token ID invalid", &err, nil)
+	default:
+		return models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token verification failed unexpectedly", &err, nil)
+	}
 }

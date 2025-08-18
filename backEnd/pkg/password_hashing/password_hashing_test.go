@@ -124,13 +124,14 @@ func TestVerifyPassword(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Call the function from the imported package
-			gotVerified := passwordHashing.VerifyPassword(tt.password, tt.hash)
+			err := passwordHashing.VerifyPassword(tt.password, tt.hash)
+			gotVerified := err == nil
 			if gotVerified != tt.wantVerified {
 				t.Errorf("VerifyPassword() gotVerified = %v, want %v for password '%s' and hash '%s'", gotVerified, tt.wantVerified, tt.password, tt.hash)
 			}
 		})
 	}
+
 }
 
 func TestHashPassword_Concurrency(t *testing.T) {
@@ -159,10 +160,10 @@ func TestHashPassword_Concurrency(t *testing.T) {
 			return
 		case hash := <-hashes:
 			// Call VerifyPassword from the imported package
-			if !passwordHashing.VerifyPassword(password, hash) {
-				t.Errorf("Concurrency test: Failed to verify a concurrently generated hash.")
-				return
+			if err := passwordHashing.VerifyPassword(password, hash); err != nil {
+				t.Errorf("Concurrency test: Failed to verify a concurrently generated hash: %v", err)
 			}
+
 		}
 	}
 	close(hashes)
