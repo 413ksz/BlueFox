@@ -5,7 +5,6 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 
@@ -13,14 +12,81 @@ import (
 	"golang.org/x/crypto/argon2"
 )
 
-const (
-	argon2KeyLengthBytes = 64 // 64 MB key output size
-)
+// KriptoArgon2ID is a struct that holds the parameters for Argon2 ID hashing
+// and encapsulates the Argon2 ID hashing logic.
+type KriptoArgon2ID struct {
+	saltLength          uint8  // length of the salt in bytes
+	timeCostS           uint32 // number of iterations over the memory cost
+	memoryCostKiloBytes uint32 // memory cost in kilobytes
+	threads             uint8  // number of threads used
+	keyLengthBytes      uint32 // length of the key in bytes
+	pepperSecret        []byte // pepper secret for password hashing
+}
 
-// GenerateSalt generates a random salt.
+// NewKriptoArgon2Id creates a new instance of KriptoArgon2Id with the specified parameters.
+// The parameters are validated before creating the instance.
 //
 // Parameters:
-// - None
+// - saltLength: The length of the salt in bytes.
+// - timeCostS: The number of iterations over the memory cost.
+// - memoryCostKb: The memory cost in kilobytes.
+// - threads: The number of threads used.
+// - keyLengthB: The length of the key in bytes.
+// - pepperSecret: The pepper secret for password hashing.
+//
+// Rationale for Argon2id Parameters:
+//
+// The following parameters are set according to modern cryptographic best practices,
+// primarily from OWASP and NIST, to ensure a strong defense against offline password guessing attacks.
+//
+//   - The memory cost (memoryCostKb) should be as high as possible without causing a denial-of-service on the system.
+//     A recommended starting point is 64 MB (65536 KB) as this provides a strong memory-hard defense against GPU-based attacks.
+//
+//   - The number of iterations (timeCostS) and threads (threads) should be tuned to keep the hashing time
+//     within an acceptable range for a user login (typically between 0.5 and 1.0 seconds).
+//     Increasing these values linearly increases the time it takes for an attacker to perform a single guess.
+//
+//   - The salt length (saltLength) and key length (keyLengthB) should be sufficient to prevent attacks.
+//     OWASP recommends a minimum salt length of 16 bytes. A stronger approach is to use a salt length
+//     that is equal to the hash output length, such as 32 bytes (256 bits).
+//
+//   - The key length (keyLengthB) is the hash output length. It should be at least 32 bytes to
+//     comply with modern standards and provide a secure output for cryptographic uses (e.g., AES-256 keys).
+//
+//   - The pepper secret (pepperSecret) is a shared secret for all password hashes. According to
+//     NIST SP 800-63B, cryptographic secrets should have a strength of at least 128 bits.
+//     Therefore, the pepper secret should be at least 16 bytes long.
+//     to NIST SP 800-63T it mantioned as secret key not papper :).
+//     The pepper secret should be stored in a secure location like a secret manager service or a secure environment variable.
+//
+// Returns:
+// - *KriptoArgon2Id: A new instance of KriptoArgon2Id.
+// - *models.CustomError: An error if the parameters are invalid.
+//
+// Error Conditions:
+// - if the parameters are invalid, (ERROR_CODE_INTERNAL_SERVER) because it's a setup error
+//
+// Example Usage:
+//
+//	argon2Id, err := NewKriptoArgon2Id(64, 5, 64*1024, 1, 64, pepperSecret)
+//
+//	if err != nil {
+//		return err
+//	}
+func NewKriptoArgon2Id(saltLength uint8, timeCostS uint32, memoryCostKb uint32, threads uint8, keyLengthB uint32, pepperSecret []byte) (*KriptoArgon2ID, *models.CustomError) {
+	if saltLength < 16 || memoryCostKb < 64*1024 || keyLengthB < 32 || len(pepperSecret) < 16 {
+		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Invalid Argon2 ID parameters to unsafe", nil, nil)
+	}
+
+	return &KriptoArgon2ID{saltLength: saltLength, timeCostS: timeCostS, memoryCostKiloBytes: memoryCostKb, threads: threads, keyLengthBytes: keyLengthB, pepperSecret: pepperSecret}, nil
+}
+
+// generateSalt generates a random salt.
+// The function uses crypto/rand a CSPRNG to generate a random salt of the specified length.
+// The salt is cryptographically secure complying with NIST SP 800-90.
+//
+// Parameters:
+// - saltLength: The length of the salt to generate in bytes.
 //
 // Returns:
 // - []byte: The generated salt.
@@ -30,46 +96,26 @@ const (
 // - if the salt generation fails,(ERROR_CODE_INTERNAL_SERVER)
 // Example Usage:
 //
-//	salt, err := GenerateSalt()
+//	salt, err := generateSalt()
 //	if err != nil {
 //		return err
 //	}
-func GenerateSalt() ([]byte, *models.CustomError) {
-	const n = 16
+func (a *KriptoArgon2ID) generateSalt() ([]byte, *models.CustomError) {
 
-	bytes := make([]byte, n)
-	if _, err := rand.Read(bytes); err != nil {
+	salt := make([]byte, a.saltLength)
+	if _, err := rand.Read(salt); err != nil {
 		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to generate salt for password", &err, nil)
 	}
-	return bytes, nil
+	return salt, nil
 }
 
-// GetPepper retrieves the paper secret key from the environment variable.
+// GenerateNew generates an Argon2 ID hash for the given password.
 //
-// Parameters:
-// - None
-//
-// Returns:
-// - []byte: The paper secret key.
-// - *models.CustomError: An error if the paper secret key is not found.
-//
-// Error Conditions:
-// - if the paper secret key is not found,(ERROR_CODE_INTERNAL_SERVER)
-// Example Usage:
-//
-//	papper, err := GetPepper()
-//	if err != nil {
-//		return err
-//	}
-func GetPepper() ([]byte, *models.CustomError) {
-	pepper := os.Getenv("PEPPER_SECRET_KEY")
-	if pepper == "" {
-		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to get paper secret key", nil, nil)
-	}
-	return []byte(pepper), nil
-}
-
-// GenerateNewArgon2IdHash generates an Argon2 ID hash for the given password.
+// Functionality:
+//  1. Generate a random salt.
+//  2. Append the pepper secret to the password.
+//  3. Hash the password using Argon2 ID.
+//  4. Format the Argon2 ID hash.
 //
 // Parameters:
 // - password: The password to hash.
@@ -79,35 +125,30 @@ func GetPepper() ([]byte, *models.CustomError) {
 // - *models.CustomError: An error if the hash generation fails.
 //
 // Error Conditions:
+// - if the Argon2 ID parameters are not set
 // - if the salt generation fails
-// - if the paper secret key is not found
 // Example Usage:
 //
-//	argon2IdHash, err := GenerateNewArgon2IdHash(password)
+//	argon2IdHash, err := KriptoArgon2ID.GenerateNew(password)
 //	if err != nil {
 //		return err
 //	}
-func GenerateNewArgon2IdHash(password string) (string, *models.CustomError) {
+func (a *KriptoArgon2ID) GenerateNew(password string) (string, *models.CustomError) {
+	if a == nil {
+		return "", models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to get the underlying Argon2 ID parameters because they are nil", nil, nil)
+	}
 	const (
 		argon2Version = argon2.Version
-		timeCostS     = 5         // 5 seconds iteration
-		memoryCostKb  = 64 * 1024 // 64 MB
-		threads       = 1         // because of serverless environment
 	)
-	salt, err := GenerateSalt()
-	if err != nil {
-		return "", err
-	}
-
-	pepper, err := GetPepper()
+	salt, err := a.generateSalt()
 	if err != nil {
 		return "", err
 	}
 
 	passwordBytes := []byte(password)
-	pepperedPassword := append(passwordBytes, pepper...)
+	pepperedPassword := append(passwordBytes, a.pepperSecret...)
 
-	argon2IdHash := argon2.IDKey(pepperedPassword, salt, timeCostS, memoryCostKb, threads, argon2KeyLengthBytes)
+	argon2IdHash := argon2.IDKey(pepperedPassword, salt, a.timeCostS, a.memoryCostKiloBytes, a.threads, a.keyLengthBytes)
 
 	if argon2IdHash == nil {
 		return "", models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to generate password hash", nil, nil)
@@ -118,16 +159,22 @@ func GenerateNewArgon2IdHash(password string) (string, *models.CustomError) {
 
 	fullHash := fmt.Sprintf("$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s",
 		argon2Version,
-		memoryCostKb,
-		timeCostS,
-		threads,
+		a.memoryCostKiloBytes,
+		a.timeCostS,
+		a.threads,
 		b64Salt,
 		b64Hash,
 	)
 	return fullHash, nil
 }
 
-// VerifyPassword verifies the given password against the provided Argon2 ID hash.
+// Verify verifies the given password against the provided Argon2 ID hash.
+//
+// Functionality:
+//  1. Parse the Argon2 ID hash into its components.
+//  2. Append the pepper secret to the password.
+//  3. Hash the password using Argon2 ID.
+//  4. Verify the hash against the Argon2 ID hash.
 //
 // Parameters:
 // - password: The password to verify.
@@ -137,27 +184,25 @@ func GenerateNewArgon2IdHash(password string) (string, *models.CustomError) {
 // - *models.CustomError: An error if the verification fails.
 //
 // Error Conditions:
-// - if the hash is not in the expected format,(ERROR_CODE_INTERNAL_SERVER)
-// - if the paper secret key is not found
+// - if the Argon2 ID parameters are not set
+// - if the hash is not in the expected format
 // - if the password verification fails,(ERROR_CODE_UNAUTHORIZED)
 // Example Usage:
 //
-//	if err := VerifyPassword(password, argon2IdHash);err != nil {
+//	if err := Verify(password, argon2IdHash);err != nil {
 //		return err
 //	}
-func VerifyPassword(password string, fullhash string) *models.CustomError {
+func (a *KriptoArgon2ID) Verify(password string, fullhash string) *models.CustomError {
+	if a == nil {
+		return models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to get the underlying Argon2 ID parameters because they are nil", nil, nil)
+	}
 
-	argon2IdHash, err := GetArgon2IdHashParts(fullhash)
+	argon2IdHash, err := getArgon2IdHashParts(fullhash)
 	if err != nil {
 		return err
 	}
 
-	pepper, err := GetPepper()
-	if err != nil {
-		return err
-	}
-
-	pepperedPassword := append([]byte(password), pepper...)
+	pepperedPassword := append([]byte(password), a.pepperSecret...)
 
 	providedHash := argon2.IDKey(
 		[]byte(pepperedPassword),
@@ -165,7 +210,7 @@ func VerifyPassword(password string, fullhash string) *models.CustomError {
 		uint32(argon2IdHash.costFactors["t"]),
 		uint32(argon2IdHash.costFactors["m"]),
 		uint8(argon2IdHash.costFactors["p"]),
-		argon2KeyLengthBytes,
+		uint32(len(argon2IdHash.Hash)),
 	)
 
 	if subtle.ConstantTimeCompare(providedHash, argon2IdHash.Hash) != 1 {
@@ -175,8 +220,8 @@ func VerifyPassword(password string, fullhash string) *models.CustomError {
 	return nil
 }
 
-// Argon2IdHash represents an Argon2 ID hash.
-type Argon2IdHash struct {
+// argon2IdHash represents an Argon2 ID hash.
+type argon2IdHash struct {
 	Argon2Version int
 	costFactors   map[string]int
 	Salt          []byte
@@ -184,7 +229,7 @@ type Argon2IdHash struct {
 }
 
 // String returns a string representation of the Argon2 ID hash.
-func (a *Argon2IdHash) String() string {
+func (a *argon2IdHash) String() string {
 	if a == nil {
 		return ""
 	}
@@ -199,7 +244,7 @@ func (a *Argon2IdHash) String() string {
 	)
 }
 
-// NewArgon2IdHash creates a new Argon2 ID hash from the provided parameters.
+// newArgon2IdHash creates a new Argon2 ID hash from the provided parameters.
 //
 // Parameters:
 // - version: The Argon2 version.
@@ -209,8 +254,8 @@ func (a *Argon2IdHash) String() string {
 //
 // Returns:
 // - *Argon2IdHash: A pointer to an Argon2IdHash struct.
-func NewArgon2IdHash(version int, costFactors map[string]int, salt []byte, hash []byte) *Argon2IdHash {
-	return &Argon2IdHash{
+func newArgon2IdHash(version int, costFactors map[string]int, salt []byte, hash []byte) *argon2IdHash {
+	return &argon2IdHash{
 		Argon2Version: version,
 		costFactors:   costFactors,
 		Salt:          salt,
@@ -218,7 +263,7 @@ func NewArgon2IdHash(version int, costFactors map[string]int, salt []byte, hash 
 	}
 }
 
-// GetArgon2IdHashParts splits the Argon2 ID hash into its components.
+// getArgon2IdHashParts splits the Argon2 ID hash into its components.
 //
 // Parameters:
 // - fullhash: The Argon2 ID hash to split.
@@ -228,34 +273,34 @@ func NewArgon2IdHash(version int, costFactors map[string]int, salt []byte, hash 
 // - *models.CustomError: An error if the hash is not in the expected format.
 //
 // Error Conditions:
-// - if the hash is not in the expected format,(ERROR_CODE_INTERNAL_SERVER)
+// - if the hash is not in the expected format,(ERROR_CODE_UNPROCESSABLE_ENTITY)
 // Example Usage:
 //
-//	argon2IdHash, err := GetArgon2IdHashParts(argon2IdHashString)
+//	argon2IdHash, err := getArgon2IdHashParts(argon2IdHashString)
 //	if err != nil {
 //		return err
 //	}
-func GetArgon2IdHashParts(fullhash string) (*Argon2IdHash, *models.CustomError) {
+func getArgon2IdHashParts(fullhash string) (*argon2IdHash, *models.CustomError) {
 	parts := strings.Split(fullhash, "$")
 	if len(parts) != 6 {
-		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to get hash parts from Argon2 ID hash($)", nil, nil)
+		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to get hash parts from Argon2 ID hash($)", nil, nil)
 	}
 
-	version, err := StringToInt(parts[2])
+	version, err := StringToInt(strings.Split(parts[2], "=")[1])
 	if err != nil {
 		return nil, err
 	}
 
 	costFactors := strings.Split(parts[3], ",")
 	if len(costFactors) != 3 {
-		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failes to get cost factors from Argon2 ID hash(,)", nil, nil)
+		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failes to get cost factors from Argon2 ID hash(,)", nil, nil)
 	}
 	costFactorsMap := make(map[string]int)
 
 	for _, costFactor := range costFactors {
 		costFactorParts := strings.Split(costFactor, "=")
 		if len(costFactorParts) != 2 {
-			return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to get cost factor and value from Argon2 ID hash(=)", nil, nil)
+			return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to get cost factor and value from Argon2 ID hash(=)", nil, nil)
 		}
 
 		value, err := StringToInt(costFactorParts[1])
@@ -268,15 +313,15 @@ func GetArgon2IdHashParts(fullhash string) (*Argon2IdHash, *models.CustomError) 
 
 	salt, saltErr := base64.RawStdEncoding.DecodeString(parts[4])
 	if saltErr != nil {
-		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to generate salt for password", &saltErr, nil)
+		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to generate salt for password", &saltErr, nil)
 	}
 
 	hash, hashErr := base64.RawStdEncoding.DecodeString(parts[5])
 	if hashErr != nil {
-		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to generate password hash", &hashErr, nil)
+		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to generate password hash", &hashErr, nil)
 	}
 
-	argon2IdHash := NewArgon2IdHash(version, costFactorsMap, salt, hash)
+	argon2IdHash := newArgon2IdHash(version, costFactorsMap, salt, hash)
 
 	return argon2IdHash, nil
 }
@@ -291,7 +336,7 @@ func GetArgon2IdHashParts(fullhash string) (*Argon2IdHash, *models.CustomError) 
 // - *models.CustomError: An error if the conversion fails.
 //
 // Error Conditions:
-// - if the conversion fails,(ERROR_CODE_INTERNAL_SERVER)
+// - if the conversion fails,(ERROR_CODE_UNPROCESSABLE_ENTITY)
 // Example Usage:
 //
 //	i, err := StringToInt("123")
@@ -301,7 +346,7 @@ func GetArgon2IdHashParts(fullhash string) (*Argon2IdHash, *models.CustomError) 
 func StringToInt(s string) (int, *models.CustomError) {
 	i, err := strconv.Atoi(s)
 	if err != nil {
-		return 0, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, fmt.Sprintf("Failed to convert %s to int", s), &err, nil)
+		return 0, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, fmt.Sprintf("Failed to convert %s to int", s), &err, nil)
 	}
 	return i, nil
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/413ksz/BlueFox/backEnd/pkg/database"
+	passwordHashing "github.com/413ksz/BlueFox/backEnd/pkg/password_hashing"
 	userService "github.com/413ksz/BlueFox/backEnd/user_menagment/application/service"
 	userRepository "github.com/413ksz/BlueFox/backEnd/user_menagment/infrastructure/persistence/repository"
 	userRouter "github.com/413ksz/BlueFox/backEnd/user_menagment/interfaces/http"
@@ -23,6 +24,7 @@ var (
 	userRepo      *userRepository.UserRepository
 	userSvc       *userService.UserServiceImpl
 	pwnedPassword *validation.PwnedPassword
+	argon2ID      *passwordHashing.KriptoArgon2ID
 	pwnedClient   *http.Client
 )
 
@@ -94,7 +96,9 @@ func Init() {
 	pwnedClient = &http.Client{}
 	pwnedPassword = validation.NewPwnedPassword(pwnedClient)
 
-	userSvc = userService.NewUserService(userRepo, pwnedPassword)
+	argon2ID = passwordHashing.NewKriptoArgon2ID()
+
+	userSvc = userService.NewUserService(userRepo, pwnedPassword, argon2ID)
 
 	userHandler = userRouter.NewUserHandler(userSvc)
 

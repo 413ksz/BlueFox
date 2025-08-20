@@ -1,73 +1,160 @@
 package passwordHashing_test
 
 import (
+	"log"
+	"sync"
 	"testing"
 
+	"github.com/413ksz/BlueFox/backEnd/pkg/models"
 	passwordHashing "github.com/413ksz/BlueFox/backEnd/pkg/password_hashing"
-	"golang.org/x/crypto/bcrypt"
 )
 
-func TestHashPassword(t *testing.T) {
+// Global instance of the Argon2ID hasher to be used across tests
+var argon2ID *passwordHashing.KriptoArgon2ID
+
+func TestMain(m *testing.M) {
+	// A mock pepper secret for testing
+	pepperSecret := []byte("a-very-long-and-secure-pepper-secret-for-testing")
+
+	// Setup the Argon2ID instance with recommended parameters
+	var err *models.CustomError
+	argon2ID, err = passwordHashing.NewKriptoArgon2Id(32, 1, 64*1024, 4, 32, pepperSecret)
+	if err != nil {
+		log.Fatalf("Failed to create KriptoArgon2ID instance for tests: %v", err)
+	}
+	m.Run()
+}
+
+// TestNewKriptoArgon2Id tests the constructor and its parameter validation
+func TestNewKriptoArgon2Id(t *testing.T) {
+	pepperSecret := []byte("a-very-long-and-secure-pepper-secret-for-testing")
 	tests := []struct {
-		name     string
-		password string
-		wantErr  bool
+		name         string
+		saltLength   uint8
+		memoryCostKb uint32
+		keyLengthB   uint32
+		pepperLen    int
+		wantErr      bool
+		wantErrCode  models.ErrorCode
 	}{
 		{
-			name:     "Valid Password (short)",
-			password: "mysecretpassword123",
-			wantErr:  false,
+			name:         "Valid Parameters",
+			saltLength:   32,
+			memoryCostKb: 64 * 1024,
+			keyLengthB:   32,
+			pepperLen:    len(pepperSecret),
+			wantErr:      false,
+			wantErrCode:  "",
 		},
 		{
-			name:     "Empty Password",
-			password: "",
-			wantErr:  false, // bcrypt can hash empty strings
+			name:         "Invalid Salt Length",
+			saltLength:   15,
+			memoryCostKb: 64 * 1024,
+			keyLengthB:   32,
+			pepperLen:    len(pepperSecret),
+			wantErr:      true,
+			wantErrCode:  models.ERROR_CODE_INTERNAL_SERVER,
 		},
 		{
-			name:     "Password Exact Max Length (72 bytes)",
-			password: "thisisasecretpasswordofexactlyseventytwocharacterslongabcdefghijklmno", // 72 chars
-			wantErr:  false,
+			name:         "Invalid Memory Cost",
+			saltLength:   32,
+			memoryCostKb: 1024,
+			keyLengthB:   32,
+			pepperLen:    len(pepperSecret),
+			wantErr:      true,
+			wantErrCode:  models.ERROR_CODE_INTERNAL_SERVER,
 		},
 		{
-			name:     "Password Exceeds Max Length (73 bytes)",
-			password: "thisisareallylongpasswordthatshouldstillbehashedcorrectlybythebcryptalgorithmanditsexactly73characterss", // 73 chars
-			wantErr:  true,                                                                                                      // EXPECT AN ERROR HERE NOW
+			name:         "Invalid Key Length",
+			saltLength:   32,
+			memoryCostKb: 64 * 1024,
+			keyLengthB:   31,
+			pepperLen:    len(pepperSecret),
+			wantErr:      true,
+			wantErrCode:  models.ERROR_CODE_INTERNAL_SERVER,
+		},
+		{
+			name:         "Invalid Pepper Secret Length",
+			saltLength:   32,
+			memoryCostKb: 64 * 1024,
+			keyLengthB:   32,
+			pepperLen:    15,
+			wantErr:      true,
+			wantErrCode:  models.ERROR_CODE_INTERNAL_SERVER,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			hashedPassword, err := passwordHashing.HashPassword(tt.password)
+			secret := make([]byte, tt.pepperLen)
+			_, err := passwordHashing.NewKriptoArgon2Id(tt.saltLength, 1, tt.memoryCostKb, 4, tt.keyLengthB, secret)
 
 			if (err != nil) != tt.wantErr {
-				t.Errorf("HashPassword() for '%s' error = %v, wantErr %v", tt.password, err, tt.wantErr)
-				return
+				t.Errorf("NewKriptoArgon2Id() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if !tt.wantErr { // If no error was expected, proceed to verify
-				if hashedPassword == "" {
-					t.Errorf("HashPassword() returned an empty hash for password: %s", tt.password)
-				}
-
-				// Verify that the generated hash is valid using bcrypt's own verification
-				// This ensures our HashPassword wrapper is producing valid bcrypt hashes
-				err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(tt.password))
-				if err != nil {
-					t.Errorf("HashPassword() generated an invalid hash for '%s': %v", tt.password, err)
+			if tt.wantErr {
+				if err.Code != tt.wantErrCode {
+					t.Errorf("NewKriptoArgon2Id() returned unexpected error code: got %s, want %s", err.Code, tt.wantErrCode)
 				}
 			}
 		})
 	}
 }
 
+// TestGenerateNew tests the hashing function
+func TestGenerateNew(t *testing.T) {
+	if argon2ID == nil {
+		t.Fatal("Argon2ID instance is nil, check TestMain setup")
+	}
+
+	tests := []struct {
+		name     string
+		password string
+		wantErr  bool
+	}{
+		{
+			name:     "Valid Password",
+			password: "mysecurepassword",
+			wantErr:  false,
+		},
+		{
+			name:     "Empty Password",
+			password: "",
+			wantErr:  false,
+		},
+		{
+			name:     "Long Password",
+			password: "thisisareallylongpasswordthatshouldstillbehashedcorrectlybytheargon2idalgo",
+			wantErr:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			hash, err := argon2ID.GenerateNew(tt.password)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GenerateNew() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && hash == "" {
+				t.Errorf("GenerateNew() returned an empty hash for password: %s", tt.password)
+			}
+		})
+	}
+}
+
+// TestVerifyPassword tests the password verification function
 func TestVerifyPassword(t *testing.T) {
-	// Generate a known good hash for testing once.
+	if argon2ID == nil {
+		t.Fatal("Argon2ID instance is nil, check TestMain setup")
+	}
+
 	validPassword := "testpassword123"
-	// Use the HashPassword function from the package being tested to generate a valid hash.
-	// This ensures the test hash is created with the same logic/cost as production.
-	validHash, err := passwordHashing.HashPassword(validPassword)
+	// Generate a known valid hash to test against
+	validHash, err := argon2ID.GenerateNew(validPassword)
 	if err != nil {
-		t.Fatalf("Failed to generate test hash for VerifyPassword tests: %v", err)
+		t.Fatalf("Failed to generate test hash: %v", err)
 	}
 
 	tests := []struct {
@@ -75,76 +162,95 @@ func TestVerifyPassword(t *testing.T) {
 		password     string
 		hash         string
 		wantVerified bool
+		wantErrCode  models.ErrorCode
 	}{
 		{
 			name:         "Correct Password",
 			password:     validPassword,
 			hash:         validHash,
 			wantVerified: true,
+			wantErrCode:  "",
 		},
 		{
 			name:         "Incorrect Password",
 			password:     "wrongpassword",
 			hash:         validHash,
 			wantVerified: false,
+			wantErrCode:  models.ERROR_CODE_UNAUTHORIZED,
 		},
 		{
-			name:     "Empty Password (correct against empty string hash)",
-			password: "",
-			// Generate a hash for an empty string directly for this specific case
-			// since VerifyPassword doesn't hash, it just compares.
-			hash:         func() string { h, _ := bcrypt.GenerateFromPassword([]byte(""), 14); return string(h) }(),
+			name:         "Empty Password (Correct)",
+			password:     "",
+			hash:         func() string { h, _ := argon2ID.GenerateNew(""); return h }(),
 			wantVerified: true,
+			wantErrCode:  "",
 		},
 		{
-			name:         "Empty Password (incorrect against non-empty hash)",
+			name:         "Empty Password (Incorrect)",
 			password:     "",
 			hash:         validHash,
 			wantVerified: false,
+			wantErrCode:  models.ERROR_CODE_UNAUTHORIZED,
 		},
 		{
 			name:         "Empty Hash",
 			password:     validPassword,
 			hash:         "",
-			wantVerified: false, // bcrypt.CompareHashAndPassword returns an error for invalid hash
+			wantVerified: false,
+			wantErrCode:  models.ERROR_CODE_UNPROCESSABLE_ENTITY,
 		},
 		{
 			name:         "Malformed Hash",
 			password:     validPassword,
-			hash:         "notavalidhash",
-			wantVerified: false, // bcrypt.CompareHashAndPassword returns an error for invalid hash
-		},
-		{
-			name:         "Hash from different password",
-			password:     "anotherpassword",
-			hash:         validHash, // Using validHash for a different password
+			hash:         "notavalidargon2idhash",
 			wantVerified: false,
+			wantErrCode:  models.ERROR_CODE_UNPROCESSABLE_ENTITY,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := passwordHashing.VerifyPassword(tt.password, tt.hash)
+			err := argon2ID.Verify(tt.password, tt.hash)
 			gotVerified := err == nil
 			if gotVerified != tt.wantVerified {
-				t.Errorf("VerifyPassword() gotVerified = %v, want %v for password '%s' and hash '%s'", gotVerified, tt.wantVerified, tt.password, tt.hash)
+				t.Errorf("VerifyPassword() gotVerified = %v, want %v for password '%s'", gotVerified, tt.wantVerified, tt.password)
+			}
+
+			if !tt.wantVerified {
+				// If an error was expected, check its code
+				if err != nil { // Check to ensure err is not nil before accessing .Code
+					if err.Code != tt.wantErrCode {
+						// Log the actual and expected error codes
+						t.Logf("Actual error message: %s", err.Details)
+						t.Errorf("VerifyPassword() returned unexpected error code: got %s, want %s", err.Code, tt.wantErrCode)
+					}
+				} else {
+					// This case should not be reached if wantVerified is false
+					t.Errorf("Expected an error but got nil")
+				}
 			}
 		})
 	}
-
 }
 
-func TestHashPassword_Concurrency(t *testing.T) {
-	// This test checks if HashPassword behaves correctly under concurrent access.
-	numGoroutines := 100
+// TestGenerateNew_Concurrency checks if the hashing function behaves correctly under concurrent access.
+func TestGenerateNew_Concurrency(t *testing.T) {
+	if argon2ID == nil {
+		t.Fatal("Argon2ID instance is nil, check TestMain setup")
+	}
+
+	var wg sync.WaitGroup
+	numGoroutines := 10
 	password := "concurrentpassword"
 	hashes := make(chan string, numGoroutines)
 	errors := make(chan error, numGoroutines)
 
+	// Use a WaitGroup to ensure all goroutines finish before the main thread exits
 	for i := 0; i < numGoroutines; i++ {
+		wg.Add(1)
 		go func() {
-			// Call HashPassword from the imported package
-			hash, err := passwordHashing.HashPassword(password)
+			defer wg.Done()
+			hash, err := argon2ID.GenerateNew(password)
 			if err != nil {
 				errors <- err
 				return
@@ -153,19 +259,29 @@ func TestHashPassword_Concurrency(t *testing.T) {
 		}()
 	}
 
-	for i := 0; i < numGoroutines; i++ {
-		select {
-		case err := <-errors:
-			t.Errorf("Concurrency test failed with error: %v", err)
-			return
-		case hash := <-hashes:
-			// Call VerifyPassword from the imported package
-			if err := passwordHashing.VerifyPassword(password, hash); err != nil {
-				t.Errorf("Concurrency test: Failed to verify a concurrently generated hash: %v", err)
-			}
-
-		}
-	}
+	// Wait for all goroutines to finish
+	wg.Wait()
 	close(hashes)
 	close(errors)
+
+	// Collect and verify results from both channels
+	var testErrors []error
+	for err := range errors {
+		testErrors = append(testErrors, err)
+	}
+
+	// If any goroutine failed to generate a hash, the test should fail
+	if len(testErrors) > 0 {
+		for _, err := range testErrors {
+			t.Errorf("Concurrency test failed with error: %v", err)
+		}
+		return
+	}
+
+	// Now, verify each successfully generated hash
+	for hash := range hashes {
+		if err := argon2ID.Verify(password, hash); err != nil {
+			t.Errorf("Concurrency test: Failed to verify a concurrently generated hash: %v", err)
+		}
+	}
 }
