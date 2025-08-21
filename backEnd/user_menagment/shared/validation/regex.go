@@ -18,8 +18,8 @@ const (
 	// EMAIL_PATTERN defines the regex for valid email addresses.
 	EMAIL_PATTERN = `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
 
-	// BCRYPT_PATTERN defines the regex for valid bcrypt hashes.
-	BCRYPT_PATTERN = `^\$2[aby]\$\d{2}\$[./0-9A-Za-z]{22}[./0-9A-Za-z]{31}$`
+	// ARGON2ID_PATTERN defines the regex for valid Argon2 ID hashes.
+	ARGON2ID_PATTERN = `^\$argon2id\$v=\d+\$m=\d+,t=\d+,p=\d+\$[A-Za-z0-9+/=]+\$[A-Za-z0-9+/=]+$`
 )
 
 // Regex variables are compiled versions of the patterns.
@@ -28,5 +28,5 @@ var (
 	usernameRegex = regexp.MustCompile(USERNAME_PATTERN)
 	nameRegex     = regexp.MustCompile(NAME_PATTERN)
 	emailRegex    = regexp.MustCompile(EMAIL_PATTERN)
-	bcryptRegex   = regexp.MustCompile(BCRYPT_PATTERN)
+	argon2IDRegex = regexp.MustCompile(ARGON2ID_PATTERN)
 )

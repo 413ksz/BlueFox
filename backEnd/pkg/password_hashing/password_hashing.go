@@ -15,12 +15,12 @@ import (
 // KriptoArgon2ID is a struct that holds the parameters for Argon2 ID hashing
 // and encapsulates the Argon2 ID hashing logic.
 type KriptoArgon2ID struct {
-	saltLength          uint8  // length of the salt in bytes
-	timeCostS           uint32 // number of iterations over the memory cost
-	memoryCostKiloBytes uint32 // memory cost in kilobytes
-	threads             uint8  // number of threads used
-	keyLengthBytes      uint32 // length of the key in bytes
-	pepperSecret        []byte // pepper secret for password hashing
+	saltLength           uint8  // length of the salt in bytes
+	timeCost             uint32 // number of iterations over the memory cost
+	memoryCostKiloBytes  uint32 // memory cost in kilobytes
+	threads              uint8  // number of threads used
+	outputkeyLengthBytes uint32 // length of the key in bytes
+	pepperSecret         []byte // pepper secret for password hashing
 }
 
 // NewKriptoArgon2Id creates a new instance of KriptoArgon2Id with the specified parameters.
@@ -28,7 +28,7 @@ type KriptoArgon2ID struct {
 //
 // Parameters:
 // - saltLength: The length of the salt in bytes.
-// - timeCostS: The number of iterations over the memory cost.
+// - iterations: The number of iterations over the memory cost.
 // - memoryCostKb: The memory cost in kilobytes.
 // - threads: The number of threads used.
 // - keyLengthB: The length of the key in bytes.
@@ -42,21 +42,22 @@ type KriptoArgon2ID struct {
 //   - The memory cost (memoryCostKb) should be as high as possible without causing a denial-of-service on the system.
 //     A recommended starting point is 64 MB (65536 KB) as this provides a strong memory-hard defense against GPU-based attacks.
 //
-//   - The number of iterations (timeCostS) and threads (threads) should be tuned to keep the hashing time
+//   - The number of iterations (iterations) and threads (threads) should be tuned to keep the hashing time
 //     within an acceptable range for a user login (typically between 0.5 and 1.0 seconds).
 //     Increasing these values linearly increases the time it takes for an attacker to perform a single guess.
 //
-//   - The salt length (saltLength) and key length (keyLengthB) should be sufficient to prevent attacks.
-//     OWASP recommends a minimum salt length of 16 bytes. A stronger approach is to use a salt length
-//     that is equal to the hash output length, such as 32 bytes (256 bits).
+//   - The salt length (saltLength) should be sufficient to prevent attacks that rely on pre-computed hashes.
+//     OWASP recommends a minimum salt length of 16 bytes. NIST SP 800-63B recommends a minimum	salt length of 4 bytes.
+//     There's no need to increase the salt length beyond 32 bytes because with because with a high entropy salt
+//     it's unlikely to be pre-computed by an attacker it has 2^256 possible values.
 //
-//   - The key length (keyLengthB) is the hash output length. It should be at least 32 bytes to
+//   - The key length (keyLengthB) is the hash output length. OWASP recommends it should be at least 32 bytes to
 //     comply with modern standards and provide a secure output for cryptographic uses (e.g., AES-256 keys).
 //
 //   - The pepper secret (pepperSecret) is a shared secret for all password hashes. According to
 //     NIST SP 800-63B, cryptographic secrets should have a strength of at least 128 bits.
 //     Therefore, the pepper secret should be at least 16 bytes long.
-//     to NIST SP 800-63T it mantioned as secret key not papper :).
+//     NIST SP 800-63B it mantioned as secret key not papper :).
 //     The pepper secret should be stored in a secure location like a secret manager service or a secure environment variable.
 //
 // Returns:
@@ -73,12 +74,12 @@ type KriptoArgon2ID struct {
 //	if err != nil {
 //		return err
 //	}
-func NewKriptoArgon2Id(saltLength uint8, timeCostS uint32, memoryCostKb uint32, threads uint8, keyLengthB uint32, pepperSecret []byte) (*KriptoArgon2ID, *models.CustomError) {
+func NewKriptoArgon2Id(saltLength uint8, iterations uint32, memoryCostKb uint32, threads uint8, keyLengthB uint32, pepperSecret []byte) (*KriptoArgon2ID, *models.CustomError) {
 	if saltLength < 16 || memoryCostKb < 64*1024 || keyLengthB < 32 || len(pepperSecret) < 16 {
 		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Invalid Argon2 ID parameters to unsafe", nil, nil)
 	}
 
-	return &KriptoArgon2ID{saltLength: saltLength, timeCostS: timeCostS, memoryCostKiloBytes: memoryCostKb, threads: threads, keyLengthBytes: keyLengthB, pepperSecret: pepperSecret}, nil
+	return &KriptoArgon2ID{saltLength: saltLength, timeCost: iterations, memoryCostKiloBytes: memoryCostKb, threads: threads, outputkeyLengthBytes: keyLengthB, pepperSecret: pepperSecret}, nil
 }
 
 // generateSalt generates a random salt.
@@ -134,6 +135,7 @@ func (a *KriptoArgon2ID) generateSalt() ([]byte, *models.CustomError) {
 //		return err
 //	}
 func (a *KriptoArgon2ID) GenerateNew(password string) (string, *models.CustomError) {
+
 	if a == nil {
 		return "", models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to get the underlying Argon2 ID parameters because they are nil", nil, nil)
 	}
@@ -146,9 +148,19 @@ func (a *KriptoArgon2ID) GenerateNew(password string) (string, *models.CustomErr
 	}
 
 	passwordBytes := []byte(password)
+	defer func() {
+		for i := range passwordBytes {
+			passwordBytes[i] = 0
+		}
+	}()
 	pepperedPassword := append(passwordBytes, a.pepperSecret...)
+	defer func() {
+		for i := range pepperedPassword {
+			pepperedPassword[i] = 0
+		}
+	}()
 
-	argon2IdHash := argon2.IDKey(pepperedPassword, salt, a.timeCostS, a.memoryCostKiloBytes, a.threads, a.keyLengthBytes)
+	argon2IdHash := argon2.IDKey(pepperedPassword, salt, a.timeCost, a.memoryCostKiloBytes, a.threads, a.outputkeyLengthBytes)
 
 	if argon2IdHash == nil {
 		return "", models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to generate password hash", nil, nil)
@@ -160,7 +172,7 @@ func (a *KriptoArgon2ID) GenerateNew(password string) (string, *models.CustomErr
 	fullHash := fmt.Sprintf("$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s",
 		argon2Version,
 		a.memoryCostKiloBytes,
-		a.timeCostS,
+		a.timeCost,
 		a.threads,
 		b64Salt,
 		b64Hash,
@@ -203,6 +215,11 @@ func (a *KriptoArgon2ID) Verify(password string, fullhash string) *models.Custom
 	}
 
 	pepperedPassword := append([]byte(password), a.pepperSecret...)
+	defer func() {
+		for i := range pepperedPassword {
+			pepperedPassword[i] = 0
+		}
+	}()
 
 	providedHash := argon2.IDKey(
 		[]byte(pepperedPassword),
