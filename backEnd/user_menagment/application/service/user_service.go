@@ -24,13 +24,15 @@ type UserService interface {
 type UserServiceImpl struct {
 	userRepo      repository.UserRepository // interface
 	pwnedPassword *validation.PwnedPassword
+	argon2ID      *passwordHashing.KriptoArgon2ID
 }
 
 // NewUserService creates a new instance of UserServiceImpl with the provided dependencies.
-func NewUserService(userRepo repository.UserRepository, pwnedPassword *validation.PwnedPassword) *UserServiceImpl {
+func NewUserService(userRepo repository.UserRepository, pwnedPassword *validation.PwnedPassword, argon2ID *passwordHashing.KriptoArgon2ID) *UserServiceImpl {
 	return &UserServiceImpl{
 		userRepo:      userRepo, // interface
 		pwnedPassword: pwnedPassword,
+		argon2ID:      argon2ID,
 	}
 }
 
@@ -63,7 +65,7 @@ func (s *UserServiceImpl) CreateUser(command command.UserCreateCommand) *models.
 		return err
 	}
 
-	passwordHash, hashingErr := passwordHashing.HashPassword(command.Password.String())
+	passwordHash, hashingErr := s.argon2ID.GenerateNew(command.Password.String())
 	if hashingErr != nil {
 		return hashingErr
 	}

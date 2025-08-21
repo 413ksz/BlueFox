@@ -198,7 +198,7 @@ func ValidatePasswordHash(passwordHash string) *models.ValidationError {
 		return validationError
 	}
 	// Check if the password hash format is valid.
-	if !bcryptRegex.MatchString(passwordHash) {
+	if !argon2IDRegex.MatchString(passwordHash) {
 		validationError := models.NewValidationError("passwordHash", passwordHash, "regex", "Invalid password hash format.")
 		return validationError
 	}
