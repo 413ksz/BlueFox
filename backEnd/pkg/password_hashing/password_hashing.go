@@ -222,7 +222,7 @@ func (a *KriptoArgon2ID) Verify(password string, fullhash string) *models.Custom
 	}()
 
 	providedHash := argon2.IDKey(
-		[]byte(pepperedPassword),
+		pepperedPassword,
 		argon2IdHash.Salt,
 		uint32(argon2IdHash.costFactors["t"]),
 		uint32(argon2IdHash.costFactors["m"]),
