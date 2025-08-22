@@ -18,7 +18,7 @@ func TestMain(m *testing.M) {
 
 	// Setup the Argon2ID instance with recommended parameters
 	var err *models.CustomError
-	argon2ID, err = passwordHashing.NewKriptoArgon2ID(32, 1, 64*1024, 4, 32, pepperSecret)
+	argon2ID, err = passwordHashing.NewKriptoArgon2ID(32, 1, 64, 4, 32, pepperSecret)
 	if err != nil {
 		log.Fatalf("Failed to create KriptoArgon2ID instance for tests: %v", err)
 	}
@@ -29,65 +29,65 @@ func TestMain(m *testing.M) {
 func TestNewKriptoArgon2Id(t *testing.T) {
 	pepperSecret := []byte("a-very-long-and-secure-pepper-secret-for-testing")
 	tests := []struct {
-		name         string
-		saltLength   uint8
-		memoryCostKb uint32
-		keyLengthB   uint32
-		pepperLen    int
-		wantErr      bool
-		wantErrCode  models.ErrorCode
+		name                string
+		saltLength          uint8
+		memoryCostMegaBytes uint32
+		keyLengthB          uint32
+		pepperLen           int
+		wantErr             bool
+		wantErrCode         models.ErrorCode
 	}{
 		{
-			name:         "Valid Parameters",
-			saltLength:   32,
-			memoryCostKb: 64 * 1024,
-			keyLengthB:   32,
-			pepperLen:    len(pepperSecret),
-			wantErr:      false,
-			wantErrCode:  "",
+			name:                "Valid Parameters",
+			saltLength:          32,
+			memoryCostMegaBytes: 64,
+			keyLengthB:          32,
+			pepperLen:           len(pepperSecret),
+			wantErr:             false,
+			wantErrCode:         "",
 		},
 		{
-			name:         "Invalid Salt Length",
-			saltLength:   15,
-			memoryCostKb: 64 * 1024,
-			keyLengthB:   32,
-			pepperLen:    len(pepperSecret),
-			wantErr:      true,
-			wantErrCode:  models.ERROR_CODE_INTERNAL_SERVER,
+			name:                "Invalid Salt Length",
+			saltLength:          15,
+			memoryCostMegaBytes: 64,
+			keyLengthB:          32,
+			pepperLen:           len(pepperSecret),
+			wantErr:             true,
+			wantErrCode:         models.ERROR_CODE_INTERNAL_SERVER,
 		},
 		{
-			name:         "Invalid Memory Cost",
-			saltLength:   32,
-			memoryCostKb: 1024,
-			keyLengthB:   32,
-			pepperLen:    len(pepperSecret),
-			wantErr:      true,
-			wantErrCode:  models.ERROR_CODE_INTERNAL_SERVER,
+			name:                "Invalid Memory Cost",
+			saltLength:          32,
+			memoryCostMegaBytes: 10,
+			keyLengthB:          32,
+			pepperLen:           len(pepperSecret),
+			wantErr:             true,
+			wantErrCode:         models.ERROR_CODE_INTERNAL_SERVER,
 		},
 		{
-			name:         "Invalid Key Length",
-			saltLength:   32,
-			memoryCostKb: 64 * 1024,
-			keyLengthB:   31,
-			pepperLen:    len(pepperSecret),
-			wantErr:      true,
-			wantErrCode:  models.ERROR_CODE_INTERNAL_SERVER,
+			name:                "Invalid Key Length",
+			saltLength:          32,
+			memoryCostMegaBytes: 64,
+			keyLengthB:          31,
+			pepperLen:           len(pepperSecret),
+			wantErr:             true,
+			wantErrCode:         models.ERROR_CODE_INTERNAL_SERVER,
 		},
 		{
-			name:         "Invalid Pepper Secret Length",
-			saltLength:   32,
-			memoryCostKb: 64 * 1024,
-			keyLengthB:   32,
-			pepperLen:    15,
-			wantErr:      true,
-			wantErrCode:  models.ERROR_CODE_INTERNAL_SERVER,
+			name:                "Invalid Pepper Secret Length",
+			saltLength:          32,
+			memoryCostMegaBytes: 64,
+			keyLengthB:          32,
+			pepperLen:           15,
+			wantErr:             true,
+			wantErrCode:         models.ERROR_CODE_INTERNAL_SERVER,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			secret := make([]byte, tt.pepperLen)
-			_, err := passwordHashing.NewKriptoArgon2ID(tt.saltLength, 1, tt.memoryCostKb, 4, tt.keyLengthB, secret)
+			_, err := passwordHashing.NewKriptoArgon2ID(tt.saltLength, 1, tt.memoryCostMegaBytes, 4, tt.keyLengthB, secret)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewKriptoArgon2Id() error = %v, wantErr %v", err, tt.wantErr)
