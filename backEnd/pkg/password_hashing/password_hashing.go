@@ -229,6 +229,10 @@ func (a *KriptoArgon2ID) Verify(password string, fullhash string) *models.Custom
 			pepperedPassword[i] = 0
 		}
 	}()
+	if argon2IdHash.costFactors["p"] < 256 {
+		return models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, fmt.Sprintf("Failed to parse Argon2 threads from hash"), nil, nil)
+
+	}
 
 	providedHash := argon2.IDKey(
 		pepperedPassword,
@@ -331,7 +335,7 @@ func getArgon2IdHashParts(fullhash string) (*argon2IdHash, *models.CustomError) 
 
 		value, err := strconv.ParseUint(costFactorParts[1], 10, 32)
 		if err != nil {
-			return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to parse cost factor value", nil, nil)
+			return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, fmt.Sprintf("Failed to parse cost factor value %s", costFactorParts[1]), &err, nil, nil)
 		}
 		costFactorsMap[costFactorParts[0]] = uint32(value)
 
