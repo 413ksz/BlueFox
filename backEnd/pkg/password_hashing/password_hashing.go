@@ -144,7 +144,6 @@ func (a *KriptoArgon2ID) generateSalt() ([]byte, *models.CustomError) {
 //		return err
 //	}
 func (a *KriptoArgon2ID) GenerateNew(password string) (string, *models.CustomError) {
-
 	if a == nil {
 		return "", models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to get the underlying Argon2 ID parameters because they are nil", nil, nil)
 	}
@@ -324,7 +323,7 @@ func getArgon2IdHashParts(fullhash string) (*argon2IdHash, *models.CustomError) 
 	if len(parts) != 6 {
 		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to get hash parts from Argon2 ID hash($)", nil, nil)
 	}
-	if parts[0] != "argon2id" {
+	if parts[1] != "argon2id" {
 		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Wrong hash algorithm in Argon2 ID hash", nil, nil)
 	}
 

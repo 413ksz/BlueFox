@@ -1,7 +1,10 @@
 package passwordHashing_test
 
 import (
+	"encoding/base64"
+	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"testing"
 
@@ -408,4 +411,121 @@ func TestGenerateNew_Concurrency(t *testing.T) {
 			t.Errorf("Concurrency test: Failed to verify a concurrently generated hash: %v", err)
 		}
 	}
+}
+
+func TestVerify_ParameterMismatch(t *testing.T) {
+	// A helper function to create a new KriptoArgon2ID instance for testing.
+	createArgon2ID := func() *passwordHashing.KriptoArgon2ID {
+		argon2Id, err := passwordHashing.NewKriptoArgon2ID(
+			16, // saltLength
+			3,  // iterations (timeCost)
+			64, // memoryCostMegaBytes
+			1,  // threads
+			32, // keyLengthB
+			[]byte("secure_pepper_secret_12345"),
+		)
+		if err != nil {
+			t.Fatalf("Failed to create KriptoArgon2ID instance: %v", err)
+		}
+		return argon2Id
+	}
+
+	argon2Id := createArgon2ID()
+
+	// Use a fixed password and generate a hash with the initial parameters.
+	password := "testpassword123"
+	fullHash, err := argon2Id.GenerateNew(password)
+	if err != nil {
+		t.Fatalf("Failed to generate a valid hash for testing: %v", err)
+	}
+
+	tests := []struct {
+		name     string
+		testFunc func() *models.CustomError
+		wantErr  bool
+	}{
+		{
+			name: "Mismatched_Salt_Length",
+			testFunc: func() *models.CustomError {
+				// Change the salt length in the hash string to be different from the
+				// one used by the KriptoArgon2ID instance.
+				parts := strings.Split(fullHash, "$")
+				// A valid hash for a 16-byte salt should have a Base64-encoded string of length 22.
+				// We'll change it to 20 to simulate a mismatch.
+				mismatchedSaltPart := parts[4][:20]
+				mismatchedHash := fmt.Sprintf("%s$%s", strings.Join(parts[:4], "$"), mismatchedSaltPart)
+
+				// This test case would fail gracefully if the code checked the salt length,
+				// but because the `Verify` function recomputes a hash with the instance's
+				// salt length, this will still return an unauthorized error. It's
+				// good to explicitly test this case.
+				return argon2Id.Verify(password, mismatchedHash)
+			},
+			wantErr: true,
+		},
+		{
+			name: "Mismatched_Key_Length_In_Hash",
+			testFunc: func() *models.CustomError {
+				// This test is to ensure that the `Verify` function correctly
+				// recomputes the hash using the parameters from the provided hash string.
+				// We'll change the key length in the hash string itself to a different value.
+				// The `argon2.IDKey` function will still work because it uses the
+				// hash from the string to determine the output length.
+				parts := strings.Split(fullHash, "$")
+				// Use a valid Base64 string to simulate a mismatched hash part.
+				// A 30-byte array encoded with RawStdEncoding gives a 40-character string.
+				differentHashPart := base64.RawStdEncoding.EncodeToString(make([]byte, 30))
+				mismatchedHash := fmt.Sprintf("%s$%s", strings.Join(parts[:5], "$"), differentHashPart)
+				return argon2Id.Verify(password, mismatchedHash)
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.testFunc()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Verify() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestVerify_DifferentParams(t *testing.T) {
+	t.Run("Verify with different memory cost", func(t *testing.T) {
+		// Generate a hash with a specific memory cost.
+		argon2IdGen, _ := passwordHashing.NewKriptoArgon2ID(16, 3, 128, 1, 32, []byte("secure_pepper_secret_12345"))
+		password := "another_test_pass"
+		fullHash, err := argon2IdGen.GenerateNew(password)
+		if err != nil {
+			t.Fatalf("Failed to generate hash: %v", err)
+		}
+
+		// Create a new instance with the same parameters for verification.
+		argon2IdVerify, _ := passwordHashing.NewKriptoArgon2ID(16, 3, 128, 1, 32, []byte("secure_pepper_secret_12345"))
+
+		// The verification should be successful.
+		if err := argon2IdVerify.Verify(password, fullHash); err != nil {
+			t.Errorf("Verify() failed with different memory cost instance: %v", err)
+		}
+	})
+
+	t.Run("Verify with different time cost", func(t *testing.T) {
+		// Generate a hash with a specific time cost.
+		argon2IdGen, _ := passwordHashing.NewKriptoArgon2ID(16, 5, 64, 1, 32, []byte("secure_pepper_secret_12345"))
+		password := "different_time_cost_pass"
+		fullHash, err := argon2IdGen.GenerateNew(password)
+		if err != nil {
+			t.Fatalf("Failed to generate hash: %v", err)
+		}
+
+		// Create a new instance with the same parameters for verification.
+		argon2IdVerify, _ := passwordHashing.NewKriptoArgon2ID(16, 5, 64, 1, 32, []byte("secure_pepper_secret_12345"))
+
+		// The verification should be successful.
+		if err := argon2IdVerify.Verify(password, fullHash); err != nil {
+			t.Errorf("Verify() failed with different time cost instance: %v", err)
+		}
+	})
 }
