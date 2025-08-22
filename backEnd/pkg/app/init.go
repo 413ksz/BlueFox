@@ -30,7 +30,7 @@ var (
 	argon2ID            *passwordHashing.KriptoArgon2ID
 	saltLength          uint8
 	iterations          uint32
-	memoryCostKiloBytes uint32
+	memoryCostMegaBytes uint32
 	threads             uint8
 	keyLengthBytes      uint32
 	pepperSecret        []byte
@@ -117,10 +117,10 @@ func Init() {
 			Msg("Failed to initialize user domain")
 	}
 
-	argon2IDTemp, argonErr := passwordHashing.NewKriptoArgon2Id(
+	argon2IDTemp, argonErr := passwordHashing.NewKriptoArgon2ID(
 		saltLength,
 		iterations,
-		memoryCostKiloBytes,
+		memoryCostMegaBytes,
 		threads,
 		keyLengthBytes,
 		pepperSecret)
@@ -165,20 +165,11 @@ func SetupArgon2IDVars() *models.CustomError {
 	pepperTemp := os.Getenv("ARGON2ID_PEPPER")
 	saltLengthTemp := os.Getenv("ARGON2ID_SALT_LENGTH")
 	iterationsTemp := os.Getenv("ARGON2ID_ITERATIONS")
-	memoryCostKiloBytesTemp := os.Getenv("ARGON2ID_MEMORY_COST_KILOBYTES")
+	memoryCostMegaBytesTemp := os.Getenv("ARGON2ID_MEMORY_COST_MEGABYTES")
 	threadsTemp := os.Getenv("ARGON2ID_THREADS")
 	keyLengthBytesTemp := os.Getenv("ARGON2ID_KEY_LENGTH_BYTES")
 
-	log.Info().
-		Str("papper", pepperTemp).
-		Str("saltLength", saltLengthTemp).
-		Str("iterations", iterationsTemp).
-		Str("memoryCostKiloBytes", memoryCostKiloBytesTemp).
-		Str("threads", threadsTemp).
-		Str("keyLengthBytes", keyLengthBytesTemp).
-		Msg("ARGON2ID environment variables found")
-
-	if pepperTemp == "" || saltLengthTemp == "" || iterationsTemp == "" || memoryCostKiloBytesTemp == "" || threadsTemp == "" || keyLengthBytesTemp == "" {
+	if pepperTemp == "" || saltLengthTemp == "" || iterationsTemp == "" || memoryCostMegaBytesTemp == "" || threadsTemp == "" || keyLengthBytesTemp == "" {
 		return models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "ARGON2ID environment variables not set", nil, nil)
 	}
 
@@ -188,11 +179,11 @@ func SetupArgon2IDVars() *models.CustomError {
 	}
 	saltLength = uint8(parsedSaltLength)
 
-	parsedMemoryCostKiloBytes, err := strconv.ParseUint(memoryCostKiloBytesTemp, 10, 32)
+	parsedMemoryCostKiloBytes, err := strconv.ParseUint(memoryCostMegaBytesTemp, 10, 32)
 	if err != nil {
-		return models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "ARGON2ID envirenment variable ARGON2ID_MEMORY_COST_KILOBYTES is not valid for uint32", nil, nil)
+		return models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "ARGON2ID envirenment variable ARGON2ID_MEMORY_COST_MEGABYTES is not valid for uint32", nil, nil)
 	}
-	memoryCostKiloBytes = uint32(parsedMemoryCostKiloBytes)
+	memoryCostMegaBytes = uint32(parsedMemoryCostKiloBytes)
 
 	parsedIterations, err := strconv.ParseUint(iterationsTemp, 10, 32)
 	if err != nil {

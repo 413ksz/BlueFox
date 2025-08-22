@@ -18,7 +18,7 @@ func TestMain(m *testing.M) {
 
 	// Setup the Argon2ID instance with recommended parameters
 	var err *models.CustomError
-	argon2ID, err = passwordHashing.NewKriptoArgon2Id(32, 1, 64*1024, 4, 32, pepperSecret)
+	argon2ID, err = passwordHashing.NewKriptoArgon2ID(32, 1, 64*1024, 4, 32, pepperSecret)
 	if err != nil {
 		log.Fatalf("Failed to create KriptoArgon2ID instance for tests: %v", err)
 	}
@@ -87,7 +87,7 @@ func TestNewKriptoArgon2Id(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			secret := make([]byte, tt.pepperLen)
-			_, err := passwordHashing.NewKriptoArgon2Id(tt.saltLength, 1, tt.memoryCostKb, 4, tt.keyLengthB, secret)
+			_, err := passwordHashing.NewKriptoArgon2ID(tt.saltLength, 1, tt.memoryCostKb, 4, tt.keyLengthB, secret)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewKriptoArgon2Id() error = %v, wantErr %v", err, tt.wantErr)
