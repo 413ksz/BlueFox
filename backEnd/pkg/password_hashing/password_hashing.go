@@ -234,12 +234,20 @@ func (a *KriptoArgon2ID) Verify(password string, fullhash string) *models.Custom
 	if !ok || parsedThreads > 255 {
 		return models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to parse Argon2 threads", nil, nil)
 	}
+	timeCost, ok := argon2IdHash.costFactors["t"]
+	if !ok {
+		return models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to parse Argon2 time cost", nil, nil)
+	}
+	memoryCostKiloBytes, ok := argon2IdHash.costFactors["m"]
+	if !ok {
+		return models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to parse Argon2 memory cost", nil, nil)
+	}
 
 	providedHash := argon2.IDKey(
 		pepperedPassword,
 		argon2IdHash.Salt,
-		argon2IdHash.costFactors["t"],
-		argon2IdHash.costFactors["m"],
+		timeCost,
+		memoryCostKiloBytes,
 		uint8(parsedThreads),
 		uint32(len(argon2IdHash.Hash)),
 	)
