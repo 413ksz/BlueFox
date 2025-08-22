@@ -229,7 +229,7 @@ func (a *KriptoArgon2ID) Verify(password string, fullhash string) *models.Custom
 			pepperedPassword[i] = 0
 		}
 	}()
-	if argon2IdHash.costFactors["p"] < 256 {
+	if argon2IdHash.costFactors["p"] < 255 {
 		return models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to parse Argon2 threads from hash", nil, nil)
 
 	}
