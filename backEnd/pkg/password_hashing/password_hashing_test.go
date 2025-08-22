@@ -164,10 +164,18 @@ func TestVerifyPassword(t *testing.T) {
 		wantVerified bool
 		wantErrCode  models.ErrorCode
 	}{
+		// 1. Success and Expected Failures
 		{
 			name:         "Correct Password",
 			password:     validPassword,
 			hash:         validHash,
+			wantVerified: true,
+			wantErrCode:  "",
+		},
+		{
+			name:         "Empty Password (Correct)",
+			password:     "",
+			hash:         func() string { h, _ := argon2ID.GenerateNew(""); return h }(),
 			wantVerified: true,
 			wantErrCode:  "",
 		},
@@ -179,19 +187,14 @@ func TestVerifyPassword(t *testing.T) {
 			wantErrCode:  models.ERROR_CODE_UNAUTHORIZED,
 		},
 		{
-			name:         "Empty Password (Correct)",
-			password:     "",
-			hash:         func() string { h, _ := argon2ID.GenerateNew(""); return h }(),
-			wantVerified: true,
-			wantErrCode:  "",
-		},
-		{
 			name:         "Empty Password (Incorrect)",
 			password:     "",
 			hash:         validHash,
 			wantVerified: false,
 			wantErrCode:  models.ERROR_CODE_UNAUTHORIZED,
 		},
+
+		// 2. Malformed Hash Structure
 		{
 			name:         "Empty Hash",
 			password:     validPassword,
@@ -205,6 +208,127 @@ func TestVerifyPassword(t *testing.T) {
 			hash:         "notavalidargon2idhash",
 			wantVerified: false,
 			wantErrCode:  models.ERROR_CODE_UNPROCESSABLE_ENTITY,
+		},
+		{
+			name:         "Missing Salt/Hash Separator",
+			password:     validPassword,
+			hash:         "$argon2id$v=19$m=65536,t=1,p=4$c29tZXNhbHQ",
+			wantVerified: false,
+			wantErrCode:  models.ERROR_CODE_UNPROCESSABLE_ENTITY,
+		},
+		{
+			name:         "Missing Cost Factor Separator",
+			password:     validPassword,
+			hash:         "$argon2id$v=19m=65536,t=1,p=4$c29tZXNhbHQ$c29tZWRhdGE",
+			wantVerified: false,
+			wantErrCode:  models.ERROR_CODE_UNPROCESSABLE_ENTITY,
+		},
+
+		// 3. Malformed Hash Parameters
+		{
+			name:         "Invalid Memory Cost Prefix",
+			password:     validPassword,
+			hash:         "$argon2id$v=19$x=65536,t=1,p=4$c29tZXNhbHQ$c29tZWRhdGE",
+			wantVerified: false,
+			wantErrCode:  models.ERROR_CODE_UNPROCESSABLE_ENTITY,
+		},
+		{
+			name:         "Invalid Time Cost Prefix",
+			password:     validPassword,
+			hash:         "$argon2id$v=19$m=65536,x=1,p=4$c29tZXNhbHQ$c29tZWRhdGE",
+			wantVerified: false,
+			wantErrCode:  models.ERROR_CODE_UNPROCESSABLE_ENTITY,
+		},
+		{
+			name:         "Invalid Threads Prefix",
+			password:     validPassword,
+			hash:         "$argon2id$v=19$m=65536,t=1,x=4$c29tZXNhbHQ$c29tZWRhdGE",
+			wantVerified: false,
+			wantErrCode:  models.ERROR_CODE_UNPROCESSABLE_ENTITY,
+		},
+		{
+			name:         "Version Not an Integer",
+			password:     validPassword,
+			hash:         "$argon2id$v=string$m=64,t=1,p=4$c29tZXNhbHQ$c29tZWRhdGE",
+			wantVerified: false,
+			wantErrCode:  models.ERROR_CODE_UNPROCESSABLE_ENTITY,
+		},
+		{
+			name:         "Memory Cost Not an Integer",
+			password:     validPassword,
+			hash:         "$argon2id$v=19$m=string,t=1,p=4$c29tZXNhbHQ$c29tZWRhdGE",
+			wantVerified: false,
+			wantErrCode:  models.ERROR_CODE_UNPROCESSABLE_ENTITY,
+		},
+		{
+			name:         "Time Cost Not an Integer",
+			password:     validPassword,
+			hash:         "$argon2id$v=19$m=65536,t=string,p=4$c29tZXNhbHQ$c29tZWRhdGE",
+			wantVerified: false,
+			wantErrCode:  models.ERROR_CODE_UNPROCESSABLE_ENTITY,
+		},
+		{
+			name:         "Threads Not an Integer",
+			password:     validPassword,
+			hash:         "$argon2id$v=19$m=64,t=1,p=string$c29tZXNhbHQ$c29tZWRhdGE",
+			wantVerified: false,
+			wantErrCode:  models.ERROR_CODE_UNPROCESSABLE_ENTITY,
+		},
+
+		// 4. Missing/Empty Hash Components
+		{
+			name:         "Missing Salt",
+			password:     validPassword,
+			hash:         "$argon2id$v=19$m=64,t=1,p=4$$c29tZWRhdGE",
+			wantVerified: false,
+			wantErrCode:  models.ERROR_CODE_UNPROCESSABLE_ENTITY,
+		},
+		{
+			name:         "Missing Password Hash Data",
+			password:     validPassword,
+			hash:         "$argon2id$v=19$m=64,t=1,p=4$c29tZXNhbHQ$",
+			wantVerified: false,
+			wantErrCode:  models.ERROR_CODE_UNPROCESSABLE_ENTITY,
+		},
+
+		// 5. Invalid Data Encoding
+		{
+			name:         "Invalid Base64 Data in Salt",
+			password:     validPassword,
+			hash:         "$argon2id$v=19$m=64,t=1,p=4$invalid_base64_data$c29tZWRhdGE",
+			wantVerified: false,
+			wantErrCode:  models.ERROR_CODE_UNPROCESSABLE_ENTITY,
+		},
+		{
+			name:         "Invalid Base64 Data in Password Hash",
+			password:     validPassword,
+			hash:         "$argon2id$v=19$m=64,t=1,p=4$c29tZXNhbHQ$invalid_base64_data",
+			wantVerified: false,
+			wantErrCode:  models.ERROR_CODE_UNPROCESSABLE_ENTITY,
+		},
+		{
+			name:         "Hash with Extra Fields",
+			password:     validPassword,
+			hash:         validHash + "$extrafield",
+			wantVerified: false,
+			wantErrCode:  models.ERROR_CODE_UNPROCESSABLE_ENTITY,
+		},
+		{
+			name:         "Hash with Different Argon2 Variant",
+			password:     validPassword,
+			hash:         "$argon2i$v=19$m=65536,t=1,p=4$c29tZXNhbHQ$c29tZWRhdGE",
+			wantVerified: false,
+			wantErrCode:  models.ERROR_CODE_UNPROCESSABLE_ENTITY,
+		},
+		{
+			name:     "Very Long Password",
+			password: "This is a very long password string created to test the system's ability to handle edge cases where the password input is exceptionally lengthy. It should not cause any issues.",
+			hash: func() string {
+				h, _ := argon2ID.GenerateNew("This is a very long password string created to test the system's ability to handle edge cases where the password input is exceptionally lengthy. It should not cause any issues.")
+				return h
+			}(),
+			wantVerified: true,
+			wantErrCode:  "",
 		},
 	}
 

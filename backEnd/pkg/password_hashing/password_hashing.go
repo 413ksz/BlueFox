@@ -232,15 +232,15 @@ func (a *KriptoArgon2ID) Verify(password string, fullhash string) *models.Custom
 
 	parsedThreads, ok := argon2IdHash.costFactors["p"]
 	if !ok || parsedThreads > 255 {
-		return models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to parse Argon2 threads", nil, nil)
+		return models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to parse Argon2 threads", nil, nil)
 	}
 	timeCost, ok := argon2IdHash.costFactors["t"]
 	if !ok {
-		return models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to parse Argon2 time cost", nil, nil)
+		return models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to parse Argon2 time cost", nil, nil)
 	}
 	memoryCostKiloBytes, ok := argon2IdHash.costFactors["m"]
 	if !ok {
-		return models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to parse Argon2 memory cost", nil, nil)
+		return models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to parse Argon2 memory cost", nil, nil)
 	}
 
 	providedHash := argon2.IDKey(
@@ -324,6 +324,9 @@ func getArgon2IdHashParts(fullhash string) (*argon2IdHash, *models.CustomError) 
 	if len(parts) != 6 {
 		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to get hash parts from Argon2 ID hash($)", nil, nil)
 	}
+	if parts[0] != "argon2id" {
+		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Wrong hash algorithm in Argon2 ID hash", nil, nil)
+	}
 
 	version, err := strconv.Atoi(strings.Split(parts[2], "=")[1])
 	if err != nil {
@@ -352,12 +355,18 @@ func getArgon2IdHashParts(fullhash string) (*argon2IdHash, *models.CustomError) 
 
 	salt, saltErr := base64.RawStdEncoding.DecodeString(parts[4])
 	if saltErr != nil {
-		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to generate salt for password", &saltErr, nil)
+		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to decode salt to base64", &saltErr, nil)
+	}
+	if len(salt) == 0 {
+		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to get salt hash from Argon2 ID hash", nil, nil)
 	}
 
 	hash, hashErr := base64.RawStdEncoding.DecodeString(parts[5])
 	if hashErr != nil {
-		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to generate password hash", &hashErr, nil)
+		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to decode password to base64", &hashErr, nil)
+	}
+	if len(hash) == 0 {
+		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to get password hash from Argon2 ID hash", nil, nil)
 	}
 
 	argon2IdHash := newArgon2IdHash(version, costFactorsMap, salt, hash)
