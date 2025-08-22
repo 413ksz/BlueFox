@@ -233,13 +233,14 @@ func (a *KriptoArgon2ID) Verify(password string, fullhash string) *models.Custom
 	if argon2IdHash.costFactors["p"] > math.MaxUint8 {
 		return models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to parse Argon2 threads from hash: value exceeds uint8 max", nil, nil)
 	}
+	parsedThreads := uint8(argon2IdHash.costFactors["p"])
 
 	providedHash := argon2.IDKey(
 		pepperedPassword,
 		argon2IdHash.Salt,
 		argon2IdHash.costFactors["t"],
 		argon2IdHash.costFactors["m"],
-		uint8(argon2IdHash.costFactors["p"]),
+		parsedThreads,
 		uint32(len(argon2IdHash.Hash)),
 	)
 
