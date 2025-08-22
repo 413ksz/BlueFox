@@ -5,7 +5,6 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"fmt"
-	"math"
 	"strconv"
 	"strings"
 
@@ -231,8 +230,8 @@ func (a *KriptoArgon2ID) Verify(password string, fullhash string) *models.Custom
 		}
 	}()
 
-	if argon2IdHash.costFactors["p"] > math.MaxUint8 {
-		return models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to parse Argon2 threads from hash: value exceeds uint8 max", nil, nil)
+	if parsedThreadsVal, ok := argon2IdHash.costFactors["p"]; !ok || parsedThreadsVal > 255 {
+		return models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to parse Argon2 threads", nil, nil)
 	}
 	parsedThreads := uint8(argon2IdHash.costFactors["p"])
 
