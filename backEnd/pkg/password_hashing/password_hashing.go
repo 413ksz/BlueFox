@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/413ksz/BlueFox/backEnd/pkg/models"
 	"golang.org/x/crypto/argon2"
@@ -302,6 +303,7 @@ func newArgon2IdHash(version int, costFactors map[string]uint32, salt []byte, ha
 }
 
 // getArgon2IdHashParts splits the Argon2 ID hash into its components.
+// The hash is expected to be in the format defined by the RFC 9106 standard.
 //
 // Parameters:
 // - fullhash: The Argon2 ID hash to split.
@@ -320,55 +322,156 @@ func newArgon2IdHash(version int, costFactors map[string]uint32, salt []byte, ha
 //	}
 func getArgon2IdHashParts(fullhash string) (*argon2IdHash, *models.CustomError) {
 	parts := strings.Split(fullhash, "$")
-	if len(parts) != 6 {
-		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to get hash parts from Argon2 ID hash($)", nil, nil)
-	}
-	if parts[1] != "argon2id" {
-		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Wrong hash algorithm in Argon2 ID hash", nil, nil)
+	if len(parts) != 6 || parts[0] != "" || parts[1] != "argon2id" {
+		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Invalid Argon2id hash format", nil, nil)
 	}
 
-	version, err := strconv.Atoi(strings.Split(parts[2], "=")[1])
+	versionParts, versionErr := splitParamOnEquals(parts[2], "v")
+	if versionErr != nil {
+		return nil, versionErr
+	}
+	version, err := strconv.Atoi(versionParts[1])
 	if err != nil {
 		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to parse Argon2 version", &err, nil)
 	}
 
-	costFactors := strings.Split(parts[3], ",")
-	if len(costFactors) != 3 {
-		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failes to get cost factors from Argon2 ID hash(,)", nil, nil)
+	costFactorsMap, costFactorsErr := getCostFactors(parts[3])
+	if costFactorsErr != nil {
+		return nil, costFactorsErr
 	}
-	costFactorsMap := make(map[string]uint32)
-
-	for _, costFactor := range costFactors {
-		costFactorParts := strings.Split(costFactor, "=")
-		if len(costFactorParts) != 2 {
-			return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to get cost factor and value from Argon2 ID hash(=)", nil, nil)
-		}
-
-		value, err := strconv.ParseUint(costFactorParts[1], 10, 32)
-		if err != nil {
-			return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, fmt.Sprintf("Failed to parse cost factor value %s", costFactorParts[1]), &err, nil)
-		}
-		costFactorsMap[costFactorParts[0]] = uint32(value)
-
-	}
-
-	salt, saltErr := base64.RawStdEncoding.DecodeString(parts[4])
+	salt, saltErr := decodeFromBase64(parts[4])
 	if saltErr != nil {
-		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to decode salt to base64", &saltErr, nil)
+		return nil, saltErr
 	}
-	if len(salt) == 0 {
-		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to get salt hash from Argon2 ID hash", nil, nil)
-	}
-
-	hash, hashErr := base64.RawStdEncoding.DecodeString(parts[5])
+	hash, hashErr := decodeFromBase64(parts[5])
 	if hashErr != nil {
-		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to decode password to base64", &hashErr, nil)
-	}
-	if len(hash) == 0 {
-		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to get password hash from Argon2 ID hash", nil, nil)
+		return nil, hashErr
 	}
 
 	argon2IdHash := newArgon2IdHash(version, costFactorsMap, salt, hash)
 
 	return argon2IdHash, nil
+}
+
+// decodeFromBase64 decodes a string from base64.
+// a string is considered valid if it is not empty and is in the canonical base64 format.
+//
+// Parameters:
+// - str: The string to decode.
+//
+// Returns:
+// - []byte: The decoded bytes.
+// - *models.CustomError: An error if the decoding fails.
+//
+// Error Conditions:
+// - if the decoding fails
+// - if the decoding is not in the canonical base64 format
+//
+// Example Usage:
+//
+//	decoded, err := decodeFromBase64(str)
+//	if err != nil {
+//		return err
+//	}
+func decodeFromBase64(str string) ([]byte, *models.CustomError) {
+	if len(str) == 0 {
+		return []byte{}, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Input string is empty", nil, nil)
+	}
+	decoded, err := base64.RawStdEncoding.DecodeString(str)
+	if err != nil {
+		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to decode to base64", &err, nil)
+	}
+	if base64.RawStdEncoding.EncodeToString(decoded) != str {
+		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Input string is not in canonical base64 format", nil, nil)
+	}
+	return decoded, nil
+}
+
+// getCostFactors returns the cost factors from a string of the form "m=cost, t=cost, p=cost"
+// it assumes that the string 2 part is a positive number based on the RFC 9106 standard
+//
+// Parameters:
+// - costFactors: The string to get the cost factors from.
+//
+// Returns:
+// - map[string]uint32: A map of the cost factors.
+// - *models.CustomError: An error if the string is not in the correct format.
+//
+// Error Conditions:
+// - if the string is not in the correct format(UNPROCESSABLE_ENTITY)
+//
+// Example Usage:
+//
+//	costFactorsMap, err := getCostFactors(str)
+//	if err != nil {
+//		return err
+//	}
+func getCostFactors(costFactors string) (map[string]uint32, *models.CustomError) {
+	costFactorsParts := strings.Split(costFactors, ",")
+	if len(costFactorsParts) != 3 {
+		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Invalid Argon2 hash: failed to get cost factors splited by (,)", nil, nil)
+	}
+	expectedPrefixes := []string{"m", "t", "p"}
+	costFactorsMap := make(map[string]uint32)
+	for i, costFactor := range costFactorsParts {
+		costFactorParts, splitErr := splitParamOnEquals(costFactor, expectedPrefixes[i])
+		if splitErr != nil {
+			return nil, splitErr
+		}
+		value, err := strconv.ParseUint(costFactorParts[1], 10, 32)
+		if err != nil {
+			return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, fmt.Sprintf("Failed to parse cost factor value %s", costFactorParts[1]), &err, nil)
+		}
+		costFactorsMap[costFactorParts[0]] = uint32(value)
+	}
+	return costFactorsMap, nil
+}
+
+// splitParamOnEquals splits a string on the first "=" character and returns the resulting parts as a slice of strings.
+// it does not validate the prefix if the paramPrefix is not specified ""
+//
+// Parameters:
+// - str: The string to split.
+// - paramPrefix: The prefix of the parameter to split on.
+//
+// Returns:
+// - []string: The resulting parts of the string split on the first "=" character.
+// - *models.CustomError: An error if the string is not in the expected format.
+//
+// Error Conditions:
+// - if the string is not in the expected format
+func splitParamOnEquals(str string, paramPrefix string) ([]string, *models.CustomError) {
+	parts := strings.Split(str, "=")
+	if len(parts) != 2 {
+		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to get key and value from Argon2 ID hash failed split on (=)", nil, nil)
+	}
+	if paramPrefix != "" && parts[0] != paramPrefix {
+		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, fmt.Sprintf("Invalid Argon2 hash: expected key %s but got %s", paramPrefix, parts[0]), nil, nil)
+	}
+	if !isNumeric(parts[1]) {
+		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, fmt.Sprintf("Invalid Argon2 hash: expected value to be numeric but got %s", parts[1]), nil, nil)
+	}
+	if parts[1][0] == '0' {
+		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Invalid Argon2 hash: leading zero is not allowed in parameter value", nil, nil)
+	}
+	return parts, nil
+}
+
+// isNumeric checks if a string contains only numeric characters.
+//
+// Parameters:
+// - str: The string to check.
+//
+// Returns:
+// - bool: True if the string contains only numeric characters, false otherwise.
+func isNumeric(str string) bool {
+	if len(str) == 0 {
+		return false
+	}
+	for _, r := range str {
+		if !unicode.IsDigit(r) {
+			return false
+		}
+	}
+	return true
 }
