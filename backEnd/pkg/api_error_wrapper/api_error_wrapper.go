@@ -60,8 +60,8 @@ func ErrorWrapper[T any](handler AppHandler[T], componentName string) http.Handl
 				Interface("details", customError.Details)
 
 			// check if the underlying error is not nil
-			if customError.Err != nil && *customError.Err != nil {
-				event = event.Err(*customError.Err)
+			if customError.Err != nil {
+				event = event.Err(customError.Err)
 			}
 			event.Msg("Error occurred in API handler")
 			models.SendApiResponse(r, w, apiResponse, requestId, componentName)

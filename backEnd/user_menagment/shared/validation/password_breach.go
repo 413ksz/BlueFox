@@ -106,16 +106,16 @@ func (p *PwnedPassword) GetPwnedPasswordHashes(identifier string) (map[string]in
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to create request for Pwned Password API", &err, nil)
+		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to create request for Pwned Password API", err, nil)
 	}
 	req.Header.Set("User-Agent", userAgent)
 
 	resp, err := p.client.Do(req)
 	if err != nil {
 		if os.IsTimeout(err) {
-			return nil, models.NewCustomError(models.ERROR_CODE_EXTERNAL_SERVER, "Pwned Password API request timed out", &err, nil)
+			return nil, models.NewCustomError(models.ERROR_CODE_EXTERNAL_SERVER, "Pwned Password API request timed out", err, nil)
 		}
-		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to make a request to Pwned Password API", &err, nil)
+		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to make a request to Pwned Password API", err, nil)
 	}
 	defer resp.Body.Close()
 
@@ -145,7 +145,7 @@ func (p *PwnedPassword) GetPwnedPasswordHashes(identifier string) (map[string]in
 	}
 
 	if err := scanner.Err(); err != nil {
-		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to scan response from Pwned Password API", &err, nil)
+		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to scan response from Pwned Password API", err, nil)
 	}
 
 	return results, nil

@@ -43,7 +43,7 @@ type KriptoArgon2ID struct {
 //   - The memory cost (memoryCostMegaBytes) should be as high as possible without causing a denial-of-service on the system.
 //     A recommended starting point is 64 MB as this provides a strong memory-hard defense against GPU-based attacks.
 //
-//   - The number of iterations (iterations) and threads (threads) should be tuned to keep the hashing time
+//   - The number of iterations (timeCost) and threads (threads) should be tuned to keep the hashing time
 //     within an acceptable range for a user login (typically between 0.5 and 1.0 seconds).
 //     Increasing these values linearly increases the time it takes for an attacker to perform a single guess.
 //
@@ -75,21 +75,21 @@ type KriptoArgon2ID struct {
 //	if err != nil {
 //		return err
 //	}
-func NewKriptoArgon2ID(saltLength uint8, iterations uint32, memoryCostMegaBytes uint32, threads uint8, keyLengthB uint32, pepperSecret []byte) (*KriptoArgon2ID, *models.CustomError) {
+func NewKriptoArgon2ID(saltLength uint8, timeCost uint32, memoryCostMegaBytes uint32, threads uint8, outputKeyLengthBytes uint32, pepperSecret []byte) (*KriptoArgon2ID, *models.CustomError) {
 	if saltLength < 16 {
-		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Invalid Argon2 ID parameter saltLength it must be at least 16 for security reason", nil, nil)
+		return nil, models.NewCustomError(models.ERROR_CODE_INITIALIZE_ERROR, "Invalid Argon2 ID parameter saltLength it must be at least 16 bytes for security reasons", nil, nil)
 	}
 	if memoryCostMegaBytes < 64 {
-		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Invalid Argon2 ID parameter memoryCostKiloBytes it must be at least 64 megabytes", nil, nil)
+		return nil, models.NewCustomError(models.ERROR_CODE_INITIALIZE_ERROR, "Invalid Argon2 ID parameter memoryCostKiloBytes it must be at least 64 megabytes for security reasons", nil, nil)
 	}
-	if keyLengthB < 32 {
-		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Invalid Argon2 ID parameter keyLengthB it must be at least 32 for security reason", nil, nil)
+	if outputKeyLengthBytes < 32 {
+		return nil, models.NewCustomError(models.ERROR_CODE_INITIALIZE_ERROR, "Invalid Argon2 ID parameter keyLengthB it must be at least 32 for security reasons", nil, nil)
 	}
 	if len(pepperSecret) < 16 {
-		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Invalid Argon2 ID parameter pepperSecret it must be at least 16 for security reason", nil, nil)
+		return nil, models.NewCustomError(models.ERROR_CODE_INITIALIZE_ERROR, "Invalid Argon2 ID parameter pepperSecret it must be at least 16 for security reasons", nil, nil)
 	}
 
-	return &KriptoArgon2ID{saltLength: saltLength, timeCost: iterations, memoryCostKiloBytes: memoryCostMegaBytes * 1024, threads: threads, outputkeyLengthBytes: keyLengthB, pepperSecret: pepperSecret}, nil
+	return &KriptoArgon2ID{saltLength: saltLength, timeCost: timeCost, memoryCostKiloBytes: memoryCostMegaBytes * 1024, threads: threads, outputkeyLengthBytes: outputKeyLengthBytes, pepperSecret: pepperSecret}, nil
 }
 
 // generateSalt generates a random salt.
@@ -115,7 +115,7 @@ func (a *KriptoArgon2ID) generateSalt() ([]byte, *models.CustomError) {
 
 	salt := make([]byte, a.saltLength)
 	if _, err := rand.Read(salt); err != nil {
-		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to generate salt for password", &err, nil)
+		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to generate salt for password", err, nil)
 	}
 	return salt, nil
 }
@@ -171,7 +171,7 @@ func (a *KriptoArgon2ID) GenerateNew(password string) (string, *models.CustomErr
 
 	argon2IdHash := argon2.IDKey(pepperedPassword, salt, a.timeCost, a.memoryCostKiloBytes, a.threads, a.outputkeyLengthBytes)
 
-	if argon2IdHash == nil {
+	if len(argon2IdHash) == 0 {
 		return "", models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to generate password hash", nil, nil)
 	}
 
@@ -223,7 +223,13 @@ func (a *KriptoArgon2ID) Verify(password string, fullhash string) *models.Custom
 		return err
 	}
 
-	pepperedPassword := append([]byte(password), a.pepperSecret...)
+	passwordBytes := []byte(password)
+	defer func() {
+		for i := range passwordBytes {
+			passwordBytes[i] = 0
+		}
+	}()
+	pepperedPassword := append(passwordBytes, a.pepperSecret...)
 	defer func() {
 		for i := range pepperedPassword {
 			pepperedPassword[i] = 0
@@ -251,6 +257,10 @@ func (a *KriptoArgon2ID) Verify(password string, fullhash string) *models.Custom
 		uint8(parsedThreads),
 		uint32(len(argon2IdHash.Hash)),
 	)
+
+	if len(providedHash) == 0 {
+		return models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to generate password hash", nil, nil)
+	}
 
 	if subtle.ConstantTimeCompare(providedHash, argon2IdHash.Hash) != 1 {
 		return models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Password verification failed", nil, nil)
@@ -332,7 +342,7 @@ func getArgon2IdHashParts(fullhash string) (*argon2IdHash, *models.CustomError) 
 	}
 	version, err := strconv.Atoi(versionParts[1])
 	if err != nil {
-		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to parse Argon2 version", &err, nil)
+		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to parse Argon2 version", err, nil)
 	}
 
 	costFactorsMap, costFactorsErr := getCostFactors(parts[3])
@@ -379,7 +389,7 @@ func decodeFromBase64(str string) ([]byte, *models.CustomError) {
 	}
 	decoded, err := base64.RawStdEncoding.DecodeString(str)
 	if err != nil {
-		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to decode to base64", &err, nil)
+		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Failed to decode to base64", err, nil)
 	}
 	if base64.RawStdEncoding.EncodeToString(decoded) != str {
 		return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, "Input string is not in canonical base64 format", nil, nil)
@@ -420,7 +430,7 @@ func getCostFactors(costFactors string) (map[string]uint32, *models.CustomError)
 		}
 		value, err := strconv.ParseUint(costFactorParts[1], 10, 32)
 		if err != nil {
-			return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, fmt.Sprintf("Failed to parse cost factor value %s", costFactorParts[1]), &err, nil)
+			return nil, models.NewCustomError(models.ERROR_CODE_UNPROCESSABLE_ENTITY, fmt.Sprintf("Failed to parse cost factor value %s", costFactorParts[1]), err, nil)
 		}
 		costFactorsMap[costFactorParts[0]] = uint32(value)
 	}

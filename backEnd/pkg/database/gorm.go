@@ -62,7 +62,7 @@ func NewGormDb() (*gorm.DB, *models.CustomError) {
 			Str("component", "database").
 			Str("event", "app_db_connect_failure").
 			Msg("Failed to connect to database")
-		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "failed to connect to database", &dbErr, nil)
+		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "failed to connect to database", dbErr, nil)
 	}
 
 	// Get the underlying sql.DB object to configure connection pooling.
@@ -73,7 +73,7 @@ func NewGormDb() (*gorm.DB, *models.CustomError) {
 			Str("component", "database").
 			Str("event", "app_db_get_sql_db_failure").
 			Msg("Failed to get underlying SQL DB for app")
-		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "failed to get underlying SQL DB for app", &err, nil)
+		return nil, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "failed to get underlying SQL DB for app", err, nil)
 	}
 
 	// Configure the connection pool to manage database connections efficiently.

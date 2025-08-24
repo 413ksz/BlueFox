@@ -14,17 +14,17 @@ func GetDatabaseErrorMessage(result *gorm.DB) *models.CustomError {
 			if pgErr.Code == "23505" {
 				// Handle specific unique constraint violations
 				if pgErr.ConstraintName == "uni_users_email" {
-					customError := models.NewCustomError(models.ERROR_CODE_CONFLICT, "A user with similar email already exists", &result.Error, nil)
+					customError := models.NewCustomError(models.ERROR_CODE_CONFLICT, "A user with similar email already exists", result.Error, nil)
 					return customError
 				}
 				// Fallback for any other unique constraint violation not specifically handled
-				customError := models.NewCustomError(models.ERROR_CODE_CONFLICT, "An unspecific unique constraint violation occurred", &result.Error, nil)
+				customError := models.NewCustomError(models.ERROR_CODE_CONFLICT, "An unspecific unique constraint violation occurred", result.Error, nil)
 				return customError
 			}
 		}
 
 		// Fallback for any other database errors (e.g., connection issues, other integrity errors)
-		customError := models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "An unspecific database error occurred", &result.Error, nil)
+		customError := models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "An unspecific database error occurred", result.Error, nil)
 		return customError
 	}
 

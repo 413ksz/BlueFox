@@ -64,7 +64,7 @@ func NewValidationError(key string, value any, failedValidation string, message 
 // for API responses.
 type ErrorCode string
 
-// Error codes constants define common API error scenarios.
+// Error codes constants define common error scenarios.
 const (
 	ERROR_CODE_BAD_REQUEST          ErrorCode = "BAD_REQUEST"
 	ERROR_CODE_JSON_SYNTAX          ErrorCode = "JSON_SYNTAX_ERROR"
@@ -76,9 +76,10 @@ const (
 	ERROR_CODE_UNAUTHORIZED         ErrorCode = "UNAUTHORIZED_ERROR"
 	ERROR_CODE_INTERNAL_SERVER      ErrorCode = "INTERNAL_SERVER_ERROR"
 	ERROR_CODE_EXTERNAL_SERVER      ErrorCode = "EXTERNAL_SERVER_ERROR"
+	ERROR_CODE_INITIALIZE_ERROR     ErrorCode = "INITIALIZE_ERROR"
 )
 
-// CustomError is a struct that encapsulates detailed custom API error information.
+// CustomError is a struct that encapsulates detailed custom error information.
 // It is designed to provide comprehensive error context to both clients and logs.
 type CustomError struct {
 	Code       ErrorCode     `json:"code"`
@@ -86,7 +87,7 @@ type CustomError struct {
 	Details    any           `json:"details,omitempty"`
 	HttpCode   int           `json:"-"`
 	LogLevel   zerolog.Level `json:"-"`
-	Err        *error        `json:"-"`
+	Err        error         `json:"-"`
 	StackTrace *string       `json:"-"`
 }
 
@@ -110,7 +111,7 @@ func (e *CustomError) Error() string {
 //
 // Returns:
 // - *CustomError: A pointer to the newly created CustomError object.
-func NewCustomError(code ErrorCode, details any, originalError *error, stackTrace *string) *CustomError {
+func NewCustomError(code ErrorCode, details any, originalError error, stackTrace *string) *CustomError {
 
 	// ---------- Initialize New CustomError ----------
 	var customError CustomError
@@ -161,6 +162,10 @@ func NewCustomError(code ErrorCode, details any, originalError *error, stackTrac
 		customError.HttpCode = http.StatusInternalServerError
 		customError.LogLevel = zerolog.ErrorLevel
 		customError.Message = "An external server error occurred."
+	case ERROR_CODE_INITIALIZE_ERROR:
+		customError.HttpCode = 0
+		customError.LogLevel = zerolog.ErrorLevel
+		customError.Message = "Failed to initialize the application."
 	default:
 		customError.HttpCode = http.StatusInternalServerError
 		customError.LogLevel = zerolog.ErrorLevel

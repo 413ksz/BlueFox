@@ -57,7 +57,7 @@ func ValidateRequestBody[T any](dto *T, request *http.Request, maxMBSize int64) 
 	body, err := io.ReadAll(io.LimitReader(request.Body, maxByteSize+1)) // +1 byte to detect if the body size exceeds the limit
 	// Check if there was an error reading the request body.
 	if err != nil {
-		apiError := models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Error reading request body", &err, nil)
+		apiError := models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Error reading request body", err, nil)
 		return apiError
 	}
 	// Check if the request body size exceeds the maximum allowed size.
@@ -114,13 +114,13 @@ func ValidateRequestBodyErrorHelper(err error) *models.CustomError {
 		// Handles type mismatches during JSON unmarshaling (e.g., expecting int, got string).
 		apiError := models.NewCustomError(models.ERROR_CODE_JSON_TYPE_MISMATCH,
 			fmt.Sprintf("Invalid type for field '%s': expected %s, got %s", e.Field, e.Type, e.Value),
-			&err, nil)
+			err, nil)
 		return apiError
 	case *json.SyntaxError:
 		// Handles malformed JSON syntax errors (e.g., unexpected end of JSON input).
 		apiError := models.NewCustomError(models.ERROR_CODE_JSON_SYNTAX,
 			fmt.Sprintf("JSON syntax error: %s", e.Error()),
-			&err, nil)
+			err, nil)
 		return apiError
 
 	default:
@@ -140,18 +140,18 @@ func ValidateRequestBodyErrorHelper(err error) *models.CustomError {
 			}
 
 			apiError := models.NewCustomError(models.ERROR_CODE_JSON_UKNOWN_FIELD,
-				fmt.Sprintf("Unknown field in request body: '%s'", unknownField), &err, nil)
+				fmt.Sprintf("Unknown field in request body: '%s'", unknownField), err, nil)
 			return apiError
 		}
 
 		// Check if the error is io.EOF, which indicates an empty request body.
 		if err == io.EOF {
-			apiError := models.NewCustomError(models.ERROR_CODE_JSON_EMPTY, "Request body is empty or malformed", &err, nil)
+			apiError := models.NewCustomError(models.ERROR_CODE_JSON_EMPTY, "Request body is empty or malformed", err, nil)
 			return apiError
 		}
 
 		// For any other unhandled decoding errors, return a generic bad request error.
-		apiError := models.NewCustomError(models.ERROR_CODE_BAD_REQUEST, "Unexpected error decoding request body", &err, nil)
+		apiError := models.NewCustomError(models.ERROR_CODE_BAD_REQUEST, "Unexpected error decoding request body", err, nil)
 		return apiError
 	}
 }

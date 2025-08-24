@@ -56,7 +56,7 @@ func GenerateJWTToken(username string, id string, profilePictureAssetId string) 
 	tokenString, err := token.SignedString(jwtSecretKey)
 	// If token generation fails, return an error.
 	if err != nil {
-		return "", models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to generate JWT token", &err, nil)
+		return "", models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Failed to generate JWT token", err, nil)
 	}
 
 	// Return the generated JWT token.
@@ -152,20 +152,20 @@ func VerifyJWTToken(tokenString string) (*models.MyClaims, *models.CustomError) 
 func JwtErrorHelper(err error) *models.CustomError {
 	switch err {
 	case jwt.ErrTokenExpired:
-		return models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token expired", &err, nil)
+		return models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token expired", err, nil)
 	case jwt.ErrTokenMalformed:
-		return models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Malformed token", &err, nil)
+		return models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Malformed token", err, nil)
 	case jwt.ErrTokenNotValidYet:
-		return models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token not valid yet", &err, nil)
+		return models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token not valid yet", err, nil)
 	case jwt.ErrTokenSignatureInvalid:
-		return models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token signature invalid", &err, nil)
+		return models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token signature invalid", err, nil)
 	case jwt.ErrTokenInvalidAudience:
-		return models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token audience invalid", &err, nil)
+		return models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token audience invalid", err, nil)
 	case jwt.ErrTokenInvalidIssuer:
-		return models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token issuer invalid", &err, nil)
+		return models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token issuer invalid", err, nil)
 	case jwt.ErrTokenInvalidId:
-		return models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token ID invalid", &err, nil)
+		return models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token ID invalid", err, nil)
 	default:
-		return models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token verification failed unexpectedly", &err, nil)
+		return models.NewCustomError(models.ERROR_CODE_UNAUTHORIZED, "Token verification failed unexpectedly", err, nil)
 	}
 }

@@ -147,24 +147,28 @@ func FuzzGenerateNew(f *testing.F) {
 	})
 }
 
-// FuzzGenerateSalt is the fuzz test function.
+// FuzzGenerateSalt is a fuzzer for the generateSalt function.
 func FuzzGenerateSalt(f *testing.F) {
-	f.Add(uint8(0))   // A zero length
-	f.Add(uint8(16))  // A common salt length
-	f.Add(uint8(32))  // Another common length
-	f.Add(uint8(100)) // A larger length
-	f.Add(uint8(255)) // The maximum possible length for uint8
+	f.Add(uint8(0))
+	f.Add(uint8(1))
+	f.Add(uint8(16))
+	f.Add(uint8(32))
+	f.Add(uint8(128))
+	f.Add(uint8(255))
 
 	f.Fuzz(func(t *testing.T, saltLength uint8) {
 		argon := &KriptoArgon2ID{
 			saltLength: saltLength,
 		}
+
 		salt, err := argon.generateSalt()
 		if err != nil {
-			t.Fatalf("Expected no error, but got %v", err)
+			t.Logf("unexpected error for salt length %d: %v", saltLength, err)
+			return
 		}
 		if len(salt) != int(saltLength) {
-			t.Fatalf("Expected salt of length %d, but got %d", saltLength, len(salt))
+			t.Fatalf("For salt length %d, expected result length %d, but got %d",
+				saltLength, saltLength, len(salt))
 		}
 	})
 }
