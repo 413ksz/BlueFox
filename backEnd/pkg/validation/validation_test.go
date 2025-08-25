@@ -1,15 +1,243 @@
 package validation_test
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
+	"io"
+	"math"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/413ksz/BlueFox/backEnd/pkg/models"
 	"github.com/413ksz/BlueFox/backEnd/pkg/validation"
 )
+
+// TestValidateRequestBodyErrorHelper is the table-driven test function for the ValidateRequestBodyErrorHelper function.
+func TestValidateRequestBodyErrorHelper(t *testing.T) {
+	// Define the test cases in a slice of structs.
+	testCases := []struct {
+		name                string
+		inputErr            error
+		expectedErrorCode   models.ErrorCode
+		expectedDetailsPart string
+		expectedMessage     string
+	}{
+		{
+			name: "UnmarshalTypeError_ValidInput",
+			inputErr: &json.UnmarshalTypeError{
+				Value:  "string",
+				Type:   reflect.TypeOf(0),
+				Offset: 1,
+				Struct: "ExampleStruct",
+				Field:  "age",
+			},
+			expectedErrorCode:   models.ERROR_CODE_JSON_TYPE_MISMATCH,
+			expectedDetailsPart: "Invalid type for field 'age'",
+			expectedMessage:     "The request body contains a field with an unexpected type.",
+		},
+		{
+			name: "SyntaxError_ValidInput",
+			inputErr: &json.SyntaxError{
+				Offset: 1,
+			},
+			expectedErrorCode:   models.ERROR_CODE_JSON_SYNTAX,
+			expectedDetailsPart: "JSON syntax error",
+			expectedMessage:     "The request body contains malformed JSON or invalid JSON syntax.",
+		},
+		{
+			name:                "UnknownField_WithQuotes",
+			inputErr:            errors.New("json: unknown field \"name\""),
+			expectedErrorCode:   models.ERROR_CODE_JSON_UKNOWN_FIELD,
+			expectedDetailsPart: "Unknown field in request body: 'name'",
+			expectedMessage:     "The request body contains an unknown field.",
+		},
+		{
+			name:                "UnknownField_WithoutQuotes",
+			inputErr:            errors.New("json: unknown field"),
+			expectedErrorCode:   models.ERROR_CODE_JSON_UKNOWN_FIELD,
+			expectedDetailsPart: "Unknown field in request body: ''",
+			expectedMessage:     "The request body contains an unknown field.",
+		},
+		{
+			name:                "EOF_Error",
+			inputErr:            io.EOF,
+			expectedErrorCode:   models.ERROR_CODE_JSON_EMPTY,
+			expectedDetailsPart: "Request body is empty or malformed",
+			expectedMessage:     "The request body is empty.",
+		},
+		{
+			name:                "Generic_UnexpectedError",
+			inputErr:            errors.New("some other random error"),
+			expectedErrorCode:   models.ERROR_CODE_BAD_REQUEST,
+			expectedDetailsPart: "Unexpected error decoding request body",
+			expectedMessage:     "The request was invalid or malformed.",
+		},
+	}
+
+	// Iterate over the test cases.
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Call the function we are testing.
+			result := validation.ValidateRequestBodyErrorHelper(tc.inputErr)
+
+			// Assertions
+			if result == nil {
+				t.Fatalf("Expected a CustomError, but got nil")
+			}
+
+			if result.Code != tc.expectedErrorCode {
+				t.Errorf("Expected error code '%s', but got '%s'", tc.expectedErrorCode, result.Code)
+			}
+
+			if result.Message != tc.expectedMessage {
+				t.Errorf("Expected message '%s', but got '%s'", tc.expectedMessage, result.Message)
+			}
+
+			if details, ok := result.Details.(string); ok {
+				if !strings.Contains(details, tc.expectedDetailsPart) {
+					t.Errorf("Expected details to contain '%s', but got '%s'", tc.expectedDetailsPart, details)
+				}
+			} else {
+				t.Errorf("Expected details to be a string, but it was not.")
+			}
+		})
+	}
+}
+
+// FuzzTargetStruct is a sample struct used for fuzzing.
+type FuzzTargetStruct struct {
+	Name string `json:"name"`
+	Age  int    `json:"age"`
+}
+
+// FuzzValidateRequestBodyErrorHelper is the fuzzer function for ValidateRequestBodyErrorHelper.
+func FuzzValidateRequestBodyErrorHelper(f *testing.F) {
+	f.Add([]byte(`{"name": "John", "age": 30}`))                     // Valid JSON
+	f.Add([]byte(`{"name": "Jane", "age": "twenty-five"}`))          // JSON type mismatch
+	f.Add([]byte(`{"name": "Jack", "age": 20, "extraField": true}`)) // Unknown field
+	f.Add([]byte(`{"name": "Mike"`))                                 // JSON syntax error
+	f.Add([]byte(``))                                                // Empty input (EOF)
+	f.Add([]byte(`bad data`))                                        // Generic invalid JSON
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		r := bytes.NewReader(data)
+		decoder := json.NewDecoder(r)
+		decoder.DisallowUnknownFields()
+
+		var target FuzzTargetStruct
+		err := decoder.Decode(&target)
+
+		if err != nil && err != io.EOF {
+			result := validation.ValidateRequestBodyErrorHelper(err)
+			if result == nil {
+				t.Fatalf("Expected a CustomError for error: %v, but got nil", err)
+			}
+		} else if err == io.EOF {
+			result := validation.ValidateRequestBodyErrorHelper(err)
+			if result == nil {
+				t.Fatalf("Expected a CustomError for io.EOF, but got nil")
+			}
+		}
+	})
+}
+
+// TestConvertMbToBytes tests the ConvertMbToBytes function with table-driven tests.
+func TestConvertMbToBytes(t *testing.T) {
+	testCases := []struct {
+		name            string
+		input           int64
+		expected        int64
+		expectedErrCode models.ErrorCode
+	}{
+		{
+			name:            "Zero megabytes",
+			input:           0,
+			expected:        0,
+			expectedErrCode: "", // No error expected
+		},
+		{
+			name:            "One megabyte",
+			input:           1,
+			expected:        1048576,
+			expectedErrCode: "",
+		},
+		{
+			name:            "Large number within bounds",
+			input:           math.MaxInt64 / (1024 * 1024),
+			expected:        (math.MaxInt64 / (1024 * 1024)) * 1024 * 1024,
+			expectedErrCode: "",
+		},
+		{
+			name:            "Negative input",
+			input:           -10,
+			expected:        0,
+			expectedErrCode: models.ERROR_CODE_INTERNAL_SERVER,
+		},
+		{
+			name:            "Overflow input",
+			input:           (math.MaxInt64 / (1024 * 1024)) + 1,
+			expected:        0,
+			expectedErrCode: models.ERROR_CODE_INTERNAL_SERVER,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := validation.ConvertMbToBytes(tc.input)
+
+			if tc.expectedErrCode != "" {
+				if err == nil {
+					t.Errorf("Expected an error with code %s but got nil", tc.expectedErrCode)
+				} else if err.Code != tc.expectedErrCode {
+					t.Errorf("Expected error code %s, but got %s", tc.expectedErrCode, err.Code)
+				}
+			} else {
+				if err != nil {
+					t.Errorf("Did not expect an error but got %v", err)
+				}
+
+				if got != tc.expected {
+					t.Errorf("For input %d, expected %d, but got %d", tc.input, tc.expected, got)
+				}
+			}
+		})
+	}
+}
+
+// FuzzConvertMbToBytes tests the ConvertMbToBytes function with a fuzzer.
+func FuzzConvertMbToBytes(f *testing.F) {
+	f.Add(int64(0))
+	f.Add(int64(1))
+	f.Add(int64(1024))
+	f.Add(int64(math.MaxInt64 / (1024 * 1024)))
+	f.Add(int64(-1)) // Negative input test case
+	f.Fuzz(func(t *testing.T, megaByte int64) {
+		bytes, err := validation.ConvertMbToBytes(megaByte)
+		if megaByte < 0 {
+			if err == nil {
+				t.Fatalf("Expected an error for negative input %d, but got nil", megaByte)
+			}
+			return
+		}
+		if megaByte > math.MaxInt64/(1024*1024) {
+			if err == nil {
+				t.Fatalf("Expected an error for overflow input %d, but got nil", megaByte)
+			}
+			return
+		}
+		if err != nil {
+			t.Fatalf("Did not expect an error for input %d, but got %v", megaByte, err)
+		}
+		expectedBytes := megaByte * 1024 * 1024
+		if bytes != expectedBytes {
+			t.Errorf("For input %d, expected %d bytes, but got %d", megaByte, expectedBytes, bytes)
+		}
+	})
+}
 
 // TestDTO must match the structure expected by your validation.ValidateRequestBody function
 type TestDTO struct {
@@ -207,6 +435,23 @@ func TestValidateRequestBody(t *testing.T) {
 			expectedCode: models.ERROR_CODE_JSON_SYNTAX,
 			expectedDto:  TestDTO{},
 		},
+		// --- Convert Body Size ---
+		{
+			name:         "Large Max MB Buffer Overflow",
+			requestBody:  `{"name": "overflow", "age": 10}`,
+			contentType:  "application/json",
+			maxMB:        math.MaxInt64, // A value that will cause an overflow in ConvertMbToBytes
+			expectedCode: models.ERROR_CODE_INTERNAL_SERVER,
+			expectedDto:  TestDTO{},
+		},
+		{
+			name:         "Negative Max MB Buffer (uses default)",
+			requestBody:  `{"name": "overflow", "age": 10}`,
+			contentType:  "application/json",
+			maxMB:        -1, // Should use the default 1MB
+			expectedCode: "", // Expect no error
+			expectedDto:  TestDTO{Name: "overflow", Age: 10},
+		},
 	}
 
 	for _, tt := range tests {
@@ -237,6 +482,28 @@ func TestValidateRequestBody(t *testing.T) {
 			}
 		})
 	}
+}
+
+// FuzzValidateRequestBody is a fuzzer for the ValidateRequestBody function.
+func FuzzValidateRequestBody(f *testing.F) {
+	f.Add([]byte(`{"name": "John", "age": 30}`), int64(1))                                         // Valid JSON, 1MB limit
+	f.Add([]byte(`{"name": "Jane", "age": "twenty-five"}`), int64(1))                              // JSON type mismatch
+	f.Add([]byte(`{"name": "Jack", "age": 20, "extraField": true}`), int64(1))                     // Unknown field
+	f.Add([]byte(`{"name": "Mike"`), int64(1))                                                     // JSON syntax error
+	f.Add([]byte(`{"name": "Test", "age": 1, "email": "test@example.com"}`), int64(0))             // Valid JSON, test default 1MB limit
+	f.Add([]byte(``), int64(1))                                                                    // Empty input (EOF)
+	f.Add([]byte(`{"data":"`+strings.Repeat("a", 2*1024*1024)+`"}`), int64(1))                     // Oversized valid JSON body (2MB)
+	f.Add([]byte(`{"name": "Test", "age": 1, "email": "test@example.com"}trailingdata`), int64(1)) // Valid JSON with trailing data
+
+	f.Fuzz(func(t *testing.T, data []byte, maxMB int64) {
+		req := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(data))
+		req.Header.Set("Content-Type", "application/json")
+		var dto TestDTO
+		err := validation.ValidateRequestBody(&dto, req, maxMB)
+		if err != nil {
+			_ = err
+		}
+	})
 }
 
 // Test for specific read errors that aren't about size limits

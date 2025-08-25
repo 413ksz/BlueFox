@@ -23,3 +23,7 @@ node_modules
 # System Files
 .DS_Store
 Thumbs.db
+
+# Temp Test Data
+**/fuz_test/
+**/coverage.out

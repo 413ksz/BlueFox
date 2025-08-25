@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"strings"
 
@@ -41,9 +42,15 @@ func ValidateRequestBody[T any](dto *T, request *http.Request, maxMBSize int64) 
 
 	// Ensure maxMBBuffer is not less than 0 MB.
 	if maxMBSize <= 0 {
-		maxByteSize = ConvertMbToBytes(defaultMaxMbSize) // 1 MB default
+		maxByteSizeTemp, _ := ConvertMbToBytes(defaultMaxMbSize) // 1 MB default
+		maxByteSize = maxByteSizeTemp
 	} else {
-		maxByteSize = ConvertMbToBytes(maxMBSize) // convert MB to bytes
+		maxByteSizeTemp, parseErr := ConvertMbToBytes(maxMBSize) // convert MB to bytes
+		if parseErr != nil {
+			return parseErr
+		}
+		maxByteSize = maxByteSizeTemp
+
 	}
 
 	// ----------- Read Request Body -----------
@@ -158,10 +165,19 @@ func ValidateRequestBodyErrorHelper(err error) *models.CustomError {
 
 // ConvertMbToBytes converts megabytes to bytes
 // parameters:
-//   - mb: megabytes
+//   - int64: megabytes
 //
 // returns:
 //   - int64: bytes
-func ConvertMbToBytes(mb int64) int64 {
-	return mb * 1024 * 1024
+func ConvertMbToBytes(megaByte int64) (int64, *models.CustomError) {
+	const bytesPerMegabyte = 1024 * 1024
+	if megaByte < 0 {
+		return 0, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Cannot convert negative megabytes to bytes (megabytes must be non-negative)", nil, nil)
+	}
+
+	if megaByte > math.MaxInt64/bytesPerMegabyte {
+		return 0, models.NewCustomError(models.ERROR_CODE_INTERNAL_SERVER, "Overflow detected while converting megabytes to bytes", nil, nil)
+	}
+
+	return megaByte * bytesPerMegabyte, nil
 }

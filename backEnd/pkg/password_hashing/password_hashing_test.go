@@ -56,7 +56,7 @@ func TestNewKriptoArgon2Id(t *testing.T) {
 			keyLengthB:          32,
 			pepperLen:           len(pepperSecret),
 			wantErr:             true,
-			wantErrCode:         models.ERROR_CODE_INTERNAL_SERVER,
+			wantErrCode:         models.ERROR_CODE_INITIALIZE_ERROR,
 		},
 		{
 			name:                "Invalid Memory Cost",
@@ -65,7 +65,7 @@ func TestNewKriptoArgon2Id(t *testing.T) {
 			keyLengthB:          32,
 			pepperLen:           len(pepperSecret),
 			wantErr:             true,
-			wantErrCode:         models.ERROR_CODE_INTERNAL_SERVER,
+			wantErrCode:         models.ERROR_CODE_INITIALIZE_ERROR,
 		},
 		{
 			name:                "Invalid Key Length",
@@ -74,7 +74,7 @@ func TestNewKriptoArgon2Id(t *testing.T) {
 			keyLengthB:          31,
 			pepperLen:           len(pepperSecret),
 			wantErr:             true,
-			wantErrCode:         models.ERROR_CODE_INTERNAL_SERVER,
+			wantErrCode:         models.ERROR_CODE_INITIALIZE_ERROR,
 		},
 		{
 			name:                "Invalid Pepper Secret Length",
@@ -83,7 +83,7 @@ func TestNewKriptoArgon2Id(t *testing.T) {
 			keyLengthB:          32,
 			pepperLen:           15,
 			wantErr:             true,
-			wantErrCode:         models.ERROR_CODE_INTERNAL_SERVER,
+			wantErrCode:         models.ERROR_CODE_INITIALIZE_ERROR,
 		},
 	}
 
