@@ -77,6 +77,7 @@ const (
 	ERROR_CODE_INTERNAL_SERVER      ErrorCode = "INTERNAL_SERVER_ERROR"
 	ERROR_CODE_EXTERNAL_SERVER      ErrorCode = "EXTERNAL_SERVER_ERROR"
 	ERROR_CODE_INITIALIZE_ERROR     ErrorCode = "INITIALIZE_ERROR"
+	ERROR_CODE_NOT_FOUND            ErrorCode = "NOT_FOUND_ERROR"
 )
 
 // CustomError is a struct that encapsulates detailed custom error information.
@@ -166,6 +167,10 @@ func NewCustomError(code ErrorCode, details any, originalError error, stackTrace
 		customError.HttpCode = 0
 		customError.LogLevel = zerolog.ErrorLevel
 		customError.Message = "Failed to initialize the application."
+	case ERROR_CODE_NOT_FOUND:
+		customError.HttpCode = http.StatusNotFound
+		customError.LogLevel = zerolog.WarnLevel
+		customError.Message = "The requested resource was not found."
 	default:
 		customError.HttpCode = http.StatusInternalServerError
 		customError.LogLevel = zerolog.ErrorLevel

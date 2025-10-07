@@ -9,10 +9,11 @@ import (
 	"github.com/413ksz/BlueFox/backEnd/pkg/database"
 	"github.com/413ksz/BlueFox/backEnd/pkg/models"
 	passwordHashing "github.com/413ksz/BlueFox/backEnd/pkg/password_hashing"
-	userService "github.com/413ksz/BlueFox/backEnd/user_menagment/application/service"
-	userRepository "github.com/413ksz/BlueFox/backEnd/user_menagment/infrastructure/persistence/repository"
-	userRouter "github.com/413ksz/BlueFox/backEnd/user_menagment/interfaces/http"
-	"github.com/413ksz/BlueFox/backEnd/user_menagment/shared/validation"
+	userService "github.com/413ksz/BlueFox/backEnd/user_menagement/application/service"
+	userQuerier "github.com/413ksz/BlueFox/backEnd/user_menagement/infrastructure/persistence/database"
+	userRepository "github.com/413ksz/BlueFox/backEnd/user_menagement/infrastructure/persistence/repository"
+	userRouter "github.com/413ksz/BlueFox/backEnd/user_menagement/interfaces/http"
+	"github.com/413ksz/BlueFox/backEnd/user_menagement/shared/validation"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -74,7 +75,7 @@ func Init() {
 		Str("component", "main_app").
 		Str("event", "app_db_init_start").
 		Msg("Initializing global database connection")
-	db, dbErr := database.NewGormDb()
+	db, dbErr := database.NewConnectionPool()
 	if dbErr != nil {
 		log.Fatal().
 			Err(dbErr).
@@ -99,7 +100,9 @@ func Init() {
 		Str("event", "app_domain_init_user").
 		Msg("Initializing user domain")
 
-	userRepo = userRepository.NewUserRepository(dB)
+	userQuerier := userQuerier.New(dB.DB)
+
+	userRepo = userRepository.NewUserRepository(userQuerier)
 
 	pwnedClient = &http.Client{}
 	pwnedPassword = validation.NewPwnedPassword(pwnedClient)
