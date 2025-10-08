@@ -8,21 +8,19 @@ import (
 	valueobject "github.com/413ksz/BlueFox/backEnd/user_menagement/shared/value_object"
 )
 
-// UserCreateRequestDTO defines the structure for incoming HTTP requests
-// to create a new user.
-// It includes JSON tags for request unmarshaling and validation rules
-// for immediate input validation at the API boundary.
+// UserCreateRequestDTO represents the request body for creating a new user.
+// it contains the necessary fields for creating a user.
 type UserCreateRequestDTO struct {
-	Username    string    `json:"username" validate:"required,min=3,max=30,username"`
-	Email       string    `json:"email" validate:"required,max=254,email"`
-	Password    string    `json:"password" validate:"required,min=8,max=72,password"`
-	DateOfBirth time.Time `json:"dateOfBirth" validate:"required,dateofbirth"`
+	Username    string    `json:"username"`
+	Email       string    `json:"email"`
+	Password    string    `json:"password"`
+	DateOfBirth time.Time `json:"dateOfBirth"`
 }
 
 // ToCreateUserCommand converts the UserCreateRequestDTO into a
 // command.UserCreateCommand. This transformation prepares the data
 // for processing by the application layer, stripping away HTTP-specific
-// concerns like JSON and validation tags.
+// concerns like JSON unmarshalling
 func (dto *UserCreateRequestDTO) ToCreateUserCommand() (command.UserCreateCommand, *models.CustomError) {
 
 	// ------------ Validation ------------

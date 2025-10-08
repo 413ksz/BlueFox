@@ -13,7 +13,7 @@ type Username struct {
 
 func NewUsername(value string) (Username, *models.ValidationError) {
 	trimmedValue := strings.TrimSpace(value)
-	if validationError := validation.ValidateUsernameString(value); validationError != nil {
+	if validationError := validation.ValidateUsernameString(trimmedValue); validationError != nil {
 		return Username{}, validationError
 	}
 	return Username{value: trimmedValue}, nil

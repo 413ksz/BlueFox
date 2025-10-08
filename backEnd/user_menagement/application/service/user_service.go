@@ -4,8 +4,10 @@ import (
 	"github.com/413ksz/BlueFox/backEnd/pkg/models"
 	passwordHashing "github.com/413ksz/BlueFox/backEnd/pkg/password_hashing"
 	"github.com/413ksz/BlueFox/backEnd/user_menagement/application/command"
+	"github.com/413ksz/BlueFox/backEnd/user_menagement/application/query"
 	"github.com/413ksz/BlueFox/backEnd/user_menagement/domain/model"
 	"github.com/413ksz/BlueFox/backEnd/user_menagement/domain/repository"
+	"github.com/413ksz/BlueFox/backEnd/user_menagement/shared/dto"
 	"github.com/413ksz/BlueFox/backEnd/user_menagement/shared/validation"
 
 	"github.com/google/uuid"
@@ -14,7 +16,7 @@ import (
 // UserService is an interface for user-related operations.
 type UserService interface {
 	CreateUser(command command.UserCreateCommand) *models.CustomError
-	GetUser(id uuid.UUID) (*model.User, *models.CustomError)
+	GetUser(id query.PublicUserQuery) (*dto.PublicUserDTO, *models.CustomError)
 	UpdateUser(id uuid.UUID, command command.UserUpdateCommand) (*model.User, *models.CustomError)
 	DeleteUser(id uuid.UUID) *models.CustomError
 }
@@ -82,9 +84,14 @@ func (s *UserServiceImpl) CreateUser(command command.UserCreateCommand) *models.
 	return nil
 }
 
-func (s *UserServiceImpl) GetUser(id uuid.UUID) (*model.User, *models.CustomError) {
-	// implementation for GetUser method
-	return nil, nil
+func (s *UserServiceImpl) GetUser(query query.PublicUserQuery) (*dto.PublicUserDTO, *models.CustomError) {
+
+	user, repoError := s.userRepo.Get(query.Id.UUID())
+	if repoError != nil {
+		return nil, repoError
+	}
+
+	return user, nil
 }
 
 func (s *UserServiceImpl) UpdateUser(id uuid.UUID, command command.UserUpdateCommand) (*model.User, *models.CustomError) {

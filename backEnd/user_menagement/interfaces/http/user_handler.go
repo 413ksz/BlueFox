@@ -5,7 +5,10 @@ import (
 
 	"github.com/413ksz/BlueFox/backEnd/pkg/models"
 	"github.com/413ksz/BlueFox/backEnd/pkg/validation"
+	"github.com/413ksz/BlueFox/backEnd/user_menagement/application/query"
 	"github.com/413ksz/BlueFox/backEnd/user_menagement/application/service"
+
+	"github.com/gorilla/mux"
 )
 
 // UserHandler encapsulates the logic for handling user-related operations.
@@ -60,12 +63,37 @@ func (userHandler *UserHandler) UserCreateHandler(w http.ResponseWriter, r *http
 	return apiResponse, nil
 }
 
-// UserGetHandler handles HTTP GET requests for fetching a single user by ID.
-// It retrieves the user ID (UUID) from the URL path variables (e.g., /users/{id}),
-// queries the database, and returns the user data as JSON.
-func UserGetHandler(w http.ResponseWriter, r *http.Request) (*models.ApiResponse[any], *models.CustomError) {
+// GetHandler handles the retrieval of a user data from the database.
+// it only retrives public not personal data of the user
+// paramaters:
+// - w: the HTTP response writer
+// - r: the HTTP request
+// returns:
+// - ApiResponse: the response to be sent to the client
+// - CustomError: any error that occurred
+func (userHandler *UserHandler) GetHandler(w http.ResponseWriter, r *http.Request) (*models.ApiResponse[any], *models.CustomError) {
+	id := mux.Vars(r)["id"]
+	apiResponse := models.NewApiResponse[any](nil, 0, "")
 
-	apiReasponse := models.NewApiResponse[any](nil, http.StatusBadRequest, "Bad request")
+	userQuery, querryError := query.NewPublicUserQuery(id)
+	if querryError != nil {
+		apiResponse.WithError(querryError.Message, querryError, querryError.HttpCode)
+		return apiResponse, querryError
+	}
 
-	return apiReasponse, nil
+	user, serviceError := userHandler.UserService.GetUser(userQuery)
+	if serviceError != nil {
+		apiResponse.WithError(serviceError.Message, serviceError, serviceError.HttpCode)
+		return apiResponse, serviceError
+	}
+	if user == nil {
+		customError := models.NewCustomError(models.ERROR_CODE_NOT_FOUND, "User not found", nil, nil)
+		apiResponse.WithError("User not found", customError, customError.HttpCode)
+		return apiResponse, customError
+	}
+	responseData := &models.ResponseData[any]{
+		Items: []any{user},
+	}
+	apiResponse.WithData("User retrieved successfully", responseData, http.StatusOK)
+	return apiResponse, nil
 }

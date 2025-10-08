@@ -20,7 +20,7 @@ func RegisterUserRoutes(r *mux.Router, userHandler *UserHandler) {
 	userRouter.HandleFunc("", apierrorwrapper.ErrorWrapper(userHandler.UserCreateHandler, "user_create_handler")).Methods("POST")
 
 	// GET /api/user/{id} - Get a user by ID
-	userRouter.HandleFunc("/{id}", apierrorwrapper.ErrorWrapper(userHandler.UserCreateHandler, "get_user_handler")).Methods("GET")
+	userRouter.HandleFunc("/{id}", apierrorwrapper.ErrorWrapper(userHandler.GetHandler, "get_user_handler")).Methods("GET")
 
 	// DELETE /api/user/{id} - Delete a user
 	userRouter.HandleFunc("/{id}", apierrorwrapper.ErrorWrapper(userHandler.UserCreateHandler, "delete_user_handler")).Methods("DELETE")

@@ -9,28 +9,34 @@ import (
 )
 
 // ValidateUsernameString checks if the provided username string matches the username validation rules.
-// It returns a ValidationError if the username is invalid, nil otherwise.
+// Rules:
+// - Username cannot be empty.
+// - Username must be between 3 and 30 characters.
+// - Username must be in the format of the provided regex.
 // Parameters:
 // - username: The username string to validate.
 // Returns:
 // - *ValidationError: A ValidationError if the username is invalid, nil otherwise.
+// Example:
+// username := "user123"
+// validationError := ValidateUsernameString(username)
+//
+//	if validationError != nil {
+//		return validationError
+//	}
 func ValidateUsernameString(username string) *models.ValidationError {
-	// Check if the username is empty.
 	if username == "" {
 		validationError := models.NewValidationError("username", username, "required", "Username is required.")
 		return validationError
 	}
-	// Check if the username is less than 3 characters.
 	if len(username) < 3 {
 		validationError := models.NewValidationError("username", username, "min", "Username cannot be less than 3 characters.")
 		return validationError
 	}
-	// Check if the username exceeds 30 characters.
 	if len(username) > 30 {
 		validationError := models.NewValidationError("username", username, "max", "Username cannot exceed 30 characters.")
 		return validationError
 	}
-	// Check if the username format is valid.
 	if !usernameRegex.MatchString(username) {
 		validationError := models.NewValidationError("username", username, "regex", "Invalid username format.")
 		return validationError
@@ -40,6 +46,10 @@ func ValidateUsernameString(username string) *models.ValidationError {
 
 // ValidateEmailString checks if the provided email string matches the email validation rules.
 // It returns a ValidationError if the email is invalid, nil otherwise.
+// Rules:
+// - Email cannot be empty.
+// - Email must be between 3 and 254 characters.
+// - Email must be in the format of the provided regex.
 // Parameters:
 // - email: The email string to validate.
 // Returns:

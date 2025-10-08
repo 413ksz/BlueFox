@@ -22,6 +22,10 @@ func (d DateOfBirth) Time() time.Time {
 	return d.value
 }
 
+func (d DateOfBirth) String() string {
+	return d.value.String()
+}
+
 func (d DateOfBirth) Equals(otherDateOfBirth DateOfBirth) bool {
 	return d.value.Equal(otherDateOfBirth.value)
 }

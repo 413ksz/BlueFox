@@ -21,8 +21,8 @@ func NewPassword(value string) (Password, *models.ValidationError) {
 	trimmedValue := strings.TrimSpace(value)
 
 	// Check if the password is valid.
-	if err := validation.ValidatePasswordForEntropy(trimmedValue); err != nil {
-		return Password{}, err
+	if validationErr := validation.ValidatePasswordForEntropy(trimmedValue); validationErr != nil {
+		return Password{}, validationErr
 	}
 
 	return Password{value: trimmedValue}, nil

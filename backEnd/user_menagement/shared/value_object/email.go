@@ -17,7 +17,7 @@ type Email struct {
 func NewEmail(value string) (Email, *models.ValidationError) {
 	trimmedValue := strings.TrimSpace(value)
 	trimmedValue = strings.ToLower(trimmedValue)
-	if validationError := validation.ValidateEmailString(value); validationError != nil {
+	if validationError := validation.ValidateEmailString(trimmedValue); validationError != nil {
 		return Email{}, validationError
 	}
 

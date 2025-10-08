@@ -13,8 +13,8 @@ type Name struct {
 
 func NewName(value string) (Name, *models.ValidationError) {
 	trimmedValue := strings.TrimSpace(value)
-	if err := validation.ValidateNameString(value); err != nil {
-		return Name{}, err
+	if validationErr := validation.ValidateNameString(trimmedValue); validationErr != nil {
+		return Name{}, validationErr
 	}
 
 	return Name{value: trimmedValue}, nil

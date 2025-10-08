@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createUser = `-- name: CreateUser :exec
@@ -45,4 +46,30 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 		arg.DateOfBirth,
 	)
 	return err
+}
+
+const getUser = `-- name: GetUser :one
+SELECT id, username, bio, profile_picture_asset_id
+FROM "user"
+WHERE id = $1
+LIMIT 1
+`
+
+type GetUserRow struct {
+	ID                    uuid.UUID   `json:"id"`
+	Username              string      `json:"username"`
+	Bio                   pgtype.Text `json:"bio"`
+	ProfilePictureAssetID pgtype.UUID `json:"profile_picture_asset_id"`
+}
+
+func (q *Queries) GetUser(ctx context.Context, id uuid.UUID) (GetUserRow, error) {
+	row := q.db.QueryRow(ctx, getUser, id)
+	var i GetUserRow
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Bio,
+		&i.ProfilePictureAssetID,
+	)
+	return i, err
 }

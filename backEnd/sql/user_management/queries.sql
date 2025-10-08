@@ -12,3 +12,9 @@ INSERT INTO "user" (
     $4,
     $5 
 );
+
+-- name: GetUser :one
+SELECT id, username, bio, profile_picture_asset_id
+FROM "user"
+WHERE id = $1
+LIMIT 1;
