@@ -27,3 +27,8 @@ Thumbs.db
 # Temp Test Data
 **/fuz_test/
 **/coverage.out
+
+# Graph Visulization data
+**/dependencies.dot
+**/dependency_graph.svg
+**/dependency_graph.png
