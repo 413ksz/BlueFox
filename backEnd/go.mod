@@ -1,6 +1,6 @@
 module github.com/413ksz/BlueFox/backEnd
 
-go 1.24.4
+go 1.25.2
 
 require (
 	github.com/golang-jwt/jwt/v5 v5.2.2
