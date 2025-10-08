@@ -3,10 +3,10 @@ package jwt_token_test
 import (
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/413ksz/BlueFox/backEnd/pkg/apierrors"
 	"github.com/413ksz/BlueFox/backEnd/pkg/models"
 	jwt_token "github.com/413ksz/BlueFox/backEnd/pkg/token"
 	"github.com/golang-jwt/jwt/v5"
@@ -65,7 +65,7 @@ func TestGenerateJWTToken_EnvironmentVariableNotFound(t *testing.T) {
 	// Assert an error occurred
 	assert.Error(t, err, "GenerateJWTToken should return an error when JWT_SECRET_KEY is not set")
 	// Assert the specific error code
-	assert.Equal(t, apierrors.ERROR_CODE_ENVIREMENT_VARIABLE_NOT_FOUND, err, "Error should be ERROR_CODE_ENVIREMENT_VARIABLE_NOT_FOUND")
+	assert.Equal(t, models.ERROR_CODE_INTERNAL_SERVER, err.Code, "Error should be ERROR_CODE_ENVIREMENT_VARIABLE_NOT_FOUND")
 	// Assert token string is empty
 	assert.Empty(t, tokenString, "Generated token string should be empty on error")
 }
@@ -150,7 +150,7 @@ func TestVerifyJWTToken_EmptyTokenString(t *testing.T) {
 	claims, err := jwt_token.VerifyJWTToken("")
 
 	assert.Error(t, err, "VerifyJWTToken should return an error for an empty token string")
-	assert.Equal(t, apierrors.ERROR_CODE_UNAUTHORIZED, err, "Error should be ERROR_CODE_UNAUTHORIZED for empty token string")
+	assert.Equal(t, models.ERROR_CODE_UNAUTHORIZED, err.Code, "Error should be ERROR_CODE_UNAUTHORIZED for empty token string")
 	assert.Nil(t, claims, "Claims should be nil for an empty token string")
 }
 
@@ -166,7 +166,7 @@ func TestVerifyJWTToken_InvalidToken(t *testing.T) {
 	// Assert an error occurred
 	assert.Error(t, err, "VerifyJWTToken should return an error for an invalid token")
 	// Assert the specific error code
-	assert.Equal(t, apierrors.ERROR_CODE_UNAUTHORIZED, err, "Error should be ERROR_CODE_UNAUTHORIZED for invalid token")
+	assert.Equal(t, models.ERROR_CODE_UNAUTHORIZED, err.Code, "Error should be ERROR_CODE_UNAUTHORIZED for invalid token")
 	// Assert claims are nil
 	assert.Nil(t, claims, "Claims should be nil for an invalid token")
 }
@@ -202,12 +202,12 @@ func TestVerifyJWTToken_ExpiredToken(t *testing.T) {
 	time.Sleep(shortDuration + 50*time.Millisecond) // Add a small buffer
 
 	// Attempt to verify the expired token
-	verifiedClaims, err := jwt_token.VerifyJWTToken(tokenString)
+	verifiedClaims, CustomErr := jwt_token.VerifyJWTToken(tokenString)
 
 	// Assert an error occurred
-	assert.Error(t, err, "VerifyJWTToken should return an error for an expired token")
+	assert.Error(t, CustomErr, "VerifyJWTToken should return an error for an expired token")
 	// Assert the specific error code
-	assert.Equal(t, apierrors.ERROR_CODE_UNAUTHORIZED, err, "Error should be ERROR_CODE_UNAUTHORIZED for expired token")
+	assert.Equal(t, models.ERROR_CODE_UNAUTHORIZED, CustomErr.Code, "Error should be ERROR_CODE_UNAUTHORIZED for expired token")
 	// Assert claims are nil
 	assert.Nil(t, verifiedClaims, "Claims should be nil for an expired token")
 }
@@ -231,7 +231,7 @@ func TestVerifyJWTToken_IncorrectSecretKey(t *testing.T) {
 	// Assert an error occurred
 	assert.Error(t, err, "VerifyJWTToken should return an error when using an incorrect secret key")
 	// Assert the specific error code
-	assert.Equal(t, apierrors.ERROR_CODE_UNAUTHORIZED, err, "Error should be ERROR_CODE_UNAUTHORIZED for incorrect secret key")
+	assert.Equal(t, models.ERROR_CODE_UNAUTHORIZED, err.Code, "Error should be ERROR_CODE_UNAUTHORIZED for incorrect secret key")
 	// Assert claims are nil
 	assert.Nil(t, claims, "Claims should be nil when using an incorrect secret key")
 }
@@ -253,7 +253,7 @@ func TestVerifyJWTToken_EnvironmentVariableNotFound(t *testing.T) {
 	// Assert an error occurred
 	assert.Error(t, err, "VerifyJWTToken should return an error when JWT_SECRET_KEY is not set")
 	// Assert the specific error code
-	assert.Equal(t, apierrors.ERROR_CODE_INTERNAL_SERVER, err, "Error should be ERROR_CODE_INTERNAL_SERVER when JWT_SECRET_KEY is not set")
+	assert.Equal(t, models.ERROR_CODE_INTERNAL_SERVER, err.Code, "Error should be ERROR_CODE_INTERNAL_SERVER when JWT_SECRET_KEY is not set")
 	// Assert claims are nil
 	assert.Nil(t, claims, "Claims should be nil on error")
 }
@@ -281,10 +281,10 @@ func TestVerifyJWTToken_AudienceMismatch(t *testing.T) {
 	tokenString, err := token.SignedString([]byte(testSecretKey))
 	assert.NoError(t, err)
 
-	verifiedClaims, err := jwt_token.VerifyJWTToken(tokenString)
+	verifiedClaims, CustomErr := jwt_token.VerifyJWTToken(tokenString)
 
-	assert.Error(t, err, "VerifyJWTToken should return an error for audience mismatch")
-	assert.Equal(t, apierrors.ERROR_CODE_UNAUTHORIZED, err, "Error should be ERROR_CODE_UNAUTHORIZED for audience mismatch")
+	assert.Error(t, CustomErr, "VerifyJWTToken should return an error for audience mismatch")
+	assert.Equal(t, models.ERROR_CODE_UNAUTHORIZED, CustomErr.Code, "Error should be ERROR_CODE_UNAUTHORIZED for audience mismatch")
 	assert.Nil(t, verifiedClaims, "Claims should be nil for audience mismatch")
 }
 
@@ -313,9 +313,25 @@ func TestVerifyJWTToken_InvalidSigningMethod(t *testing.T) {
 	tokenString, err := token.SignedString(jwt.UnsafeAllowNoneSignatureType) // No key needed for None method
 	assert.NoError(t, err)
 
-	verifiedClaims, err := jwt_token.VerifyJWTToken(tokenString)
+	verifiedClaims, CustomErr := jwt_token.VerifyJWTToken(tokenString)
 
-	assert.Error(t, err, "VerifyJWTToken should return an error for an invalid signing method")
-	assert.Equal(t, apierrors.ERROR_CODE_UNAUTHORIZED, err, "Error should be ERROR_CODE_UNAUTHORIZED for invalid signing method")
+	assert.Error(t, CustomErr, "VerifyJWTToken should return an error for an invalid signing method")
+	assert.Equal(t, models.ERROR_CODE_UNAUTHORIZED, CustomErr.Code, "Error should be ERROR_CODE_UNAUTHORIZED for invalid signing method")
 	assert.Nil(t, verifiedClaims, "Claims should be nil for an invalid signing method")
+}
+
+func TestVerifyJWTToken_TamperedToken(t *testing.T) {
+	setupEnv(testSecretKey)
+	defer clearEnv()
+
+	tokenString, _ := jwt_token.GenerateJWTToken(testUsername, testUserID, testProfilePicture)
+	// Change one character in the signature part
+	parts := strings.Split(tokenString, ".")
+	parts[2] = "abc" + parts[2][3:]
+	tamperedToken := strings.Join(parts, ".")
+
+	claims, err := jwt_token.VerifyJWTToken(tamperedToken)
+	assert.Error(t, err)
+	assert.Equal(t, models.ERROR_CODE_UNAUTHORIZED, err.Code)
+	assert.Nil(t, claims)
 }

@@ -84,7 +84,7 @@ const login = () => {
       const dateObject = new Date(`${birthDate()}T00:00:00`);
       if (view() === "signup") {
         const response = await fetch("/api/user", {
-          method: "PUT",
+          method: "POST",
           headers: {
             Accept: "application/json",
           },
